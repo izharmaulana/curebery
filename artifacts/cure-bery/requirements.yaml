@@ -1,0 +1,18 @@
+packages:
+  "leaflet": "Interactive maps rendering"
+  "react-leaflet": "React wrapper for leaflet maps"
+  "@types/leaflet": "TypeScript definitions for leaflet"
+  "framer-motion": "Smooth page transitions and micro-interactions"
+  "zustand": "Global state management for auth session"
+
+images:
+  - path: "artifacts/cure-bery/public/images/patient-bg.png"
+    description: "Abstract medical background with soft light blue and white gradients, very clean, minimal, professional healthcare theme, 3d glassmorphism elements, high quality"
+    aspect_ratio: "16:9"
+  - path: "artifacts/cure-bery/public/images/nurse-bg.png"
+    description: "Abstract medical background with soft teal and deep green gradients, clean professional healthcare branding for a medical portal, subtle glowing waves"
+    aspect_ratio: "16:9"
+
+notes:
+  - Using mocked data fallback for APIs to ensure demo works perfectly
+  - Map implementation uses OpenStreetMap (free) instead of Google Maps

@@ -1,15 +1,18 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CureBery API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: nurses
+    description: Nurse operations
 paths:
   /healthz:
     get:
@@ -24,6 +27,182 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login/patient:
+    post:
+      operationId: loginPatient
+      tags: [auth]
+      summary: Patient login
+      description: Login as a patient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login/nurse:
+    post:
+      operationId: loginNurse
+      tags: [auth]
+      summary: Nurse login
+      description: Login as a nurse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LoginResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      description: Logout current user
+      responses:
+        "200":
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current user
+      description: Get current authenticated user
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /nurses/nearby:
+    get:
+      operationId: getNearbyNurses
+      tags: [nurses]
+      summary: Get nearby nurses
+      description: Get nurses within specified radius
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+          description: Latitude of patient location
+        - name: lng
+          in: query
+          required: true
+          schema:
+            type: number
+          description: Longitude of patient location
+        - name: radius
+          in: query
+          required: false
+          schema:
+            type: number
+          description: Radius in kilometers (default 3)
+      responses:
+        "200":
+          description: List of nearby nurses
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NursePublicProfile"
+
+  /nurses/me/location:
+    put:
+      operationId: updateNurseLocation
+      tags: [nurses]
+      summary: Update nurse location
+      description: Update nurse current location and status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateLocationRequest"
+      responses:
+        "200":
+          description: Location updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /nurses/me/status:
+    put:
+      operationId: updateNurseStatus
+      tags: [nurses]
+      summary: Update nurse online status
+      description: Update nurse online/offline status
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateStatusRequest"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /nurses/me/profile:
+    get:
+      operationId: getNurseProfile
+      tags: [nurses]
+      summary: Get nurse profile
+      description: Get current nurse profile
+      responses:
+        "200":
+          description: Nurse profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NurseFullProfile"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +213,162 @@ components:
       required:
         - status
 
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+      required:
+        - email
+        - password
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        user:
+          $ref: "#/components/schemas/UserProfile"
+        token:
+          type: string
+      required:
+        - success
+        - user
+        - token
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [patient, nurse]
+      required:
+        - id
+        - email
+        - name
+        - role
+
+    NursePublicProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        strNumber:
+          type: string
+        specialization:
+          type: string
+        isOnline:
+          type: boolean
+        rating:
+          type: number
+        distanceKm:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        avatarUrl:
+          type: string
+      required:
+        - id
+        - name
+        - strNumber
+        - specialization
+        - isOnline
+        - rating
+        - distanceKm
+        - lat
+        - lng
+
+    NurseFullProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+        strNumber:
+          type: string
+        specialization:
+          type: string
+        isOnline:
+          type: boolean
+        rating:
+          type: number
+        lat:
+          type: number
+        lng:
+          type: number
+        avatarUrl:
+          type: string
+        totalPatients:
+          type: integer
+        yearsExperience:
+          type: integer
+      required:
+        - id
+        - name
+        - email
+        - strNumber
+        - specialization
+        - isOnline
+        - rating
+        - lat
+        - lng
+        - totalPatients
+        - yearsExperience
+
+    UpdateLocationRequest:
+      type: object
+      properties:
+        lat:
+          type: number
+        lng:
+          type: number
+      required:
+        - lat
+        - lng
+
+    UpdateStatusRequest:
+      type: object
+      properties:
+        isOnline:
+          type: boolean
+      required:
+        - isOnline
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+        - message
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+      required:
+        - error
+        - message
