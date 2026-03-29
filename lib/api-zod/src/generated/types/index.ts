@@ -13,6 +13,7 @@ export * from "./loginRequest";
 export * from "./loginResponse";
 export * from "./nurseFullProfile";
 export * from "./nursePublicProfile";
+export * from "./nurseRegisterRequest";
 export * from "./successResponse";
 export * from "./updateLocationRequest";
 export * from "./updateStatusRequest";

@@ -60,6 +60,32 @@ export const LoginNurseResponse = zod.object({
 });
 
 /**
+ * Register a new nurse account
+ * @summary Nurse registration
+ */
+export const registerNurseBodyNameMin = 3;
+
+export const registerNurseBodyPasswordMin = 6;
+
+export const registerNurseBodyStrNumberMin = 5;
+
+export const registerNurseBodyYearsExperienceMin = 0;
+
+export const RegisterNurseBody = zod.object({
+  name: zod.string().min(registerNurseBodyNameMin),
+  email: zod.string().email(),
+  password: zod.string().min(registerNurseBodyPasswordMin),
+  strNumber: zod.string().min(registerNurseBodyStrNumberMin),
+  specialization: zod.string(),
+  phone: zod.string().optional(),
+  address: zod.string().optional(),
+  yearsExperience: zod
+    .number()
+    .min(registerNurseBodyYearsExperienceMin)
+    .optional(),
+});
+
+/**
  * Logout current user
  * @summary Logout
  */

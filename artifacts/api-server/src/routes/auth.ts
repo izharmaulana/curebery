@@ -1,17 +1,53 @@
 import { Router, type IRouter } from "express";
 import { db } from "@workspace/db";
 import { usersTable } from "@workspace/db";
-import { LoginPatientBody, LoginNurseBody, LoginPatientResponse, LoginNurseResponse, GetCurrentUserResponse, LogoutResponse } from "@workspace/api-zod";
+import { LoginPatientBody, LoginNurseBody, LoginPatientResponse, LoginNurseResponse, GetCurrentUserResponse, LogoutResponse, RegisterNurseBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-const DEMO_USERS = [
-  { id: 1, email: "pasien@cureberry.id", password: "password123", name: "Budi Pratama", role: "patient" as const },
-  { id: 2, email: "pasien2@cureberry.id", password: "password123", name: "Ani Wulandari", role: "patient" as const },
-  { id: 3, email: "perawat1@cureberry.id", password: "password123", name: "Siti Rahayu, S.Kep", role: "nurse" as const },
-  { id: 4, email: "perawat2@cureberry.id", password: "password123", name: "Budi Santoso, S.Kep", role: "nurse" as const },
+type DemoUser = { id: number; email: string; password: string; name: string; role: "patient" | "nurse" };
+const DEMO_USERS: DemoUser[] = [
+  { id: 1, email: "pasien@cureberry.id", password: "password123", name: "Budi Pratama", role: "patient" },
+  { id: 2, email: "pasien2@cureberry.id", password: "password123", name: "Ani Wulandari", role: "patient" },
+  { id: 3, email: "perawat1@cureberry.id", password: "password123", name: "Siti Rahayu, S.Kep", role: "nurse" },
+  { id: 4, email: "perawat2@cureberry.id", password: "password123", name: "Budi Santoso, S.Kep", role: "nurse" },
 ];
+
+let nextId = 100;
+
+router.post("/register/nurse", (req, res) => {
+  try {
+    const body = RegisterNurseBody.parse(req.body);
+
+    const existing = DEMO_USERS.find(u => u.email === body.email);
+    if (existing) {
+      res.status(409).json({ error: "EMAIL_EXISTS", message: "Email sudah terdaftar, silakan gunakan email lain" });
+      return;
+    }
+
+    const newId = nextId++;
+    const newUser: DemoUser = {
+      id: newId,
+      email: body.email,
+      password: body.password,
+      name: body.name,
+      role: "nurse",
+    };
+    DEMO_USERS.push(newUser);
+
+    req.log.info({ userId: newId, email: body.email }, "Nurse registered");
+
+    res.status(201).json({
+      success: true,
+      user: { id: newId, email: body.email, name: body.name, role: "nurse" },
+      token: `demo-token-${newId}`,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Register nurse error");
+    res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak valid, periksa kembali semua field" });
+  }
+});
 
 router.post("/login/patient", (req, res) => {
   try {

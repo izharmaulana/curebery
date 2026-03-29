@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
 import { useMockableLogin } from "@/hooks/use-app-queries";
 import { useToast } from "@/hooks/use-toast";
-import { Activity, HeartPulse, UserCircle2, ShieldPlus } from "lucide-react";
+import { HeartPulse, UserCircle2, ShieldPlus, UserPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
@@ -106,6 +106,16 @@ export default function AuthPage() {
                 <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={nurseLogin.isPending}>
                   {nurseLogin.isPending ? "Memproses..." : "Masuk sebagai Perawat"}
                 </Button>
+                <div className="mt-3 pt-3 border-t border-teal-100 text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setLocation("/nurse-register")}
+                    className="w-full border-teal-200 text-teal-700 hover:bg-teal-50"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" /> Daftar sebagai Perawat
+                  </Button>
+                </div>
               </form>
             )}
           </div>
@@ -234,6 +244,19 @@ export default function AuthPage() {
                 {nurseLogin.isPending ? "Memproses..." : "Masuk"}
               </Button>
             </form>
+
+            <div className="mt-4 pt-4 border-t border-teal-100/60 text-center">
+              <p className="text-sm text-teal-700/60 mb-3">Belum punya akun perawat?</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocation("/nurse-register")}
+                className="w-full h-11 rounded-xl border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-400 transition-all font-medium"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Daftar sebagai Perawat
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

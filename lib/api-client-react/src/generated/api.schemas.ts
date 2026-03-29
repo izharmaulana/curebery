@@ -15,6 +15,21 @@ export interface LoginRequest {
   password: string;
 }
 
+export interface NurseRegisterRequest {
+  /** @minLength 3 */
+  name: string;
+  email: string;
+  /** @minLength 6 */
+  password: string;
+  /** @minLength 5 */
+  strNumber: string;
+  specialization: string;
+  phone?: string;
+  address?: string;
+  /** @minimum 0 */
+  yearsExperience?: number;
+}
+
 export type UserProfileRole =
   (typeof UserProfileRole)[keyof typeof UserProfileRole];
 

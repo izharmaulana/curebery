@@ -24,6 +24,7 @@ import type {
   LoginResponse,
   NurseFullProfile,
   NursePublicProfile,
+  NurseRegisterRequest,
   SuccessResponse,
   UpdateLocationRequest,
   UpdateStatusRequest,
@@ -287,6 +288,93 @@ export const useLoginNurse = <
   TContext
 > => {
   return useMutation(getLoginNurseMutationOptions(options));
+};
+
+/**
+ * Register a new nurse account
+ * @summary Nurse registration
+ */
+export const getRegisterNurseUrl = () => {
+  return `/api/auth/register/nurse`;
+};
+
+export const registerNurse = async (
+  nurseRegisterRequest: NurseRegisterRequest,
+  options?: RequestInit,
+): Promise<LoginResponse> => {
+  return customFetch<LoginResponse>(getRegisterNurseUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(nurseRegisterRequest),
+  });
+};
+
+export const getRegisterNurseMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerNurse>>,
+    TError,
+    { data: BodyType<NurseRegisterRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof registerNurse>>,
+  TError,
+  { data: BodyType<NurseRegisterRequest> },
+  TContext
+> => {
+  const mutationKey = ["registerNurse"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof registerNurse>>,
+    { data: BodyType<NurseRegisterRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return registerNurse(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RegisterNurseMutationResult = NonNullable<
+  Awaited<ReturnType<typeof registerNurse>>
+>;
+export type RegisterNurseMutationBody = BodyType<NurseRegisterRequest>;
+export type RegisterNurseMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Nurse registration
+ */
+export const useRegisterNurse = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof registerNurse>>,
+    TError,
+    { data: BodyType<NurseRegisterRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof registerNurse>>,
+  TError,
+  { data: BodyType<NurseRegisterRequest> },
+  TContext
+> => {
+  return useMutation(getRegisterNurseMutationOptions(options));
 };
 
 /**
