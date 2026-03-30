@@ -63,7 +63,7 @@ export default function PatientDashboard() {
           <p className="text-sm text-muted-foreground mt-1">Coba sesuaikan kata kunci pencarian Anda.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-2.5">
           {filteredNurses.map((nurse) => (
             <div
               key={nurse.id}

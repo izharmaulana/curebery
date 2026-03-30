@@ -1,10 +1,6 @@
 import { NursePublicProfile } from "@workspace/api-client-react";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, Activity, CheckCircle2, Phone, UserCircle } from "lucide-react";
-import { motion } from "framer-motion";
+import { MapPin, Star, CheckCircle2, Phone, UserCircle } from "lucide-react";
 
 interface NurseCardProps {
   nurse: NursePublicProfile;
@@ -14,89 +10,67 @@ interface NurseCardProps {
 
 export function NurseCard({ nurse, onClick, onViewProfile }: NurseCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      whileHover={{ y: -4 }}
-      transition={{ duration: 0.2 }}
+    <div
+      onClick={() => onClick(nurse)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={e => e.key === "Enter" && onClick(nurse)}
+      className="w-full text-left p-3 rounded-xl border transition-all duration-200 cursor-pointer bg-white border-border/50 hover:border-primary/30 hover:bg-blue-50/40 hover:shadow-sm"
     >
-      <Card 
-        className="p-4 cursor-pointer hover:shadow-lg transition-all border-border/50 hover:border-primary/30"
-        onClick={() => onClick(nurse)}
-      >
-        <div className="flex gap-4">
-          <div className="relative">
-            <Avatar className="h-16 w-16 border-2 border-white shadow-sm">
-              <AvatarImage src={nurse.avatarUrl} alt={nurse.name} className="object-cover" />
-              <AvatarFallback className="bg-primary/10 text-primary font-bold">
-                {nurse.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
-              </AvatarFallback>
-            </Avatar>
-            {nurse.isOnline && (
-              <span className="absolute bottom-0 right-0 w-4 h-4 rounded-full bg-emerald-500 border-2 border-white" />
-            )}
+      <div className="flex items-center gap-3">
+        <div className="relative flex-shrink-0">
+          {nurse.avatarUrl ? (
+            <img src={nurse.avatarUrl} alt={nurse.name} className="w-10 h-10 rounded-full object-cover border border-border/40" />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-sm">
+              {nurse.name.split(' ').map(n => n[0]).join('').substring(0, 2)}
+            </div>
+          )}
+          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${nurse.isOnline ? "bg-emerald-500" : "bg-gray-400"}`} />
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-1">
+            <p className="font-semibold text-sm text-foreground truncate leading-tight">{nurse.name}</p>
+            <span className={`text-xs font-bold flex-shrink-0 ${nurse.isOnline ? "text-emerald-600" : "text-gray-400"}`}>
+              {nurse.isOnline ? "Online" : "Offline"}
+            </span>
           </div>
-          
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start mb-1">
-              <div>
-                <h4 className="font-bold text-foreground font-display text-lg leading-tight truncate">
-                  {nurse.name}
-                </h4>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
-                  <Activity className="w-3.5 h-3.5" />
-                  <span className="truncate">{nurse.specialization}</span>
-                </div>
-              </div>
-              <Badge variant={nurse.isOnline ? "default" : "secondary"} className={nurse.isOnline ? "bg-emerald-500 hover:bg-emerald-600" : ""}>
-                {nurse.isOnline ? 'Online' : 'Offline'}
-              </Badge>
-            </div>
-            
-            <div className="flex items-center gap-3 mt-3 text-sm">
-              <div className="flex items-center gap-1 font-medium text-amber-500">
-                <Star className="w-4 h-4 fill-current" />
-                <span>{nurse.rating.toFixed(1)}</span>
-              </div>
-              <div className="w-1 h-1 rounded-full bg-border" />
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <MapPin className="w-4 h-4 text-primary" />
-                <span>{nurse.distanceKm} km</span>
-              </div>
-            </div>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">{nurse.specialization}</p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="flex items-center gap-1 text-xs text-amber-600 font-semibold">
+              <Star className="w-3 h-3 fill-current" />{nurse.rating.toFixed(1)}
+            </span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <MapPin className="w-3 h-3" />{nurse.distanceKm} km
+            </span>
           </div>
         </div>
-        
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5 truncate">
-            <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-            <span className="truncate">{nurse.strNumber}</span>
-          </div>
-          <div className="flex gap-2 flex-shrink-0">
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300"
-              onClick={(e) => {
-                e.stopPropagation();
-                onViewProfile(nurse);
-              }}
-            >
-              <UserCircle className="w-4 h-4 mr-1.5" />
-              Profil
-            </Button>
-            <Button 
-              size="sm" 
-              variant={nurse.isOnline ? "default" : "outline"}
-              className={nurse.isOnline ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20" : ""}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <Phone className="w-4 h-4 mr-1.5" />
-              Hubungkan
-            </Button>
-          </div>
-        </div>
-      </Card>
-    </motion.div>
+      </div>
+
+      <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-2">
+        <span className="flex items-center gap-1 text-xs font-mono text-muted-foreground flex-1 truncate">
+          <CheckCircle2 className="w-3 h-3 text-primary flex-shrink-0" />
+          {nurse.strNumber}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          className="flex-shrink-0 h-7 px-2 text-xs border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300"
+          onClick={e => { e.stopPropagation(); onViewProfile(nurse); }}
+        >
+          <UserCircle className="w-3 h-3 mr-1" /> Profil
+        </Button>
+        <Button
+          size="sm"
+          className={`flex-shrink-0 h-7 px-2 text-xs ${nurse.isOnline ? "bg-primary hover:bg-primary/90 text-white shadow-sm" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
+          disabled={!nurse.isOnline}
+          onClick={e => e.stopPropagation()}
+        >
+          <Phone className="w-3 h-3 mr-1" />
+          {nurse.isOnline ? "Hubungkan" : "Offline"}
+        </Button>
+      </div>
+    </div>
   );
 }
