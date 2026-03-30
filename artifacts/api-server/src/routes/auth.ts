@@ -34,6 +34,9 @@ router.post("/register/patient", async (req, res) => {
       role: "patient",
     }).returning();
 
+    (req.session as any).userId = newUser.id;
+    (req.session as any).role = newUser.role;
+
     req.log.info({ userId: newUser.id, email }, "Patient registered");
 
     res.status(201).json({
@@ -75,6 +78,9 @@ router.post("/register/nurse", async (req, res) => {
       totalPatients: 0,
       yearsExperience: body.yearsExperience ?? 0,
     });
+
+    (req.session as any).userId = newUser.id;
+    (req.session as any).role = newUser.role;
 
     req.log.info({ userId: newUser.id, email: body.email }, "Nurse registered");
 
