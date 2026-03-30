@@ -195,7 +195,7 @@ export default function NurseRegisterPage() {
             transition={{ delay: 0.5 }}
             className="text-gray-500 text-lg"
           >
-            Mengarahkan ke dashboard tenaga medis...
+            Diarahkan ke dashboard tenaga medis...
           </motion.p>
           <motion.div
             initial={{ opacity: 0 }}
