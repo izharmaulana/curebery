@@ -93,11 +93,11 @@ export default function PatientDashboard() {
 
   return (
     <>
-    <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
+    <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-950 overflow-hidden font-sans">
 
       {/* ── DESKTOP: Sidebar + Map side by side ── */}
-      <aside className="hidden md:flex w-[420px] flex-shrink-0 bg-white shadow-[10px_0_30px_-10px_rgba(0,0,0,0.1)] z-10 flex-col border-r border-border/50">
-        <header className="px-6 py-5 border-b border-border/50 bg-white flex justify-between items-center z-20">
+      <aside className="hidden md:flex w-[420px] flex-shrink-0 bg-white dark:bg-gray-900 shadow-[10px_0_30px_-10px_rgba(0,0,0,0.1)] z-10 flex-col border-r border-border/50">
+        <header className="px-6 py-5 border-b border-border/50 bg-white dark:bg-gray-900 flex justify-between items-center z-20">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
               <HeartPulse className="w-6 h-6" />
@@ -143,7 +143,7 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        <div className="px-6 py-3 border-b border-border/30 bg-white space-y-2">
+        <div className="px-6 py-3 border-b border-border/30 bg-white dark:bg-gray-900 space-y-2">
           <div className="flex justify-between items-center">
             <h3 className="font-bold text-sm text-foreground">Tenaga Medis Terdekat</h3>
             <span className="text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
@@ -169,7 +169,7 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        <ScrollArea className="flex-1 bg-gray-50/50 p-6 pt-4">
+        <ScrollArea className="flex-1 bg-gray-50/50 dark:bg-gray-950 p-6 pt-4">
           <NurseListContent />
         </ScrollArea>
       </aside>
@@ -188,7 +188,7 @@ export default function PatientDashboard() {
       <div className="flex md:hidden flex-col w-full h-full">
 
         {/* Mobile Header */}
-        <header className="bg-white px-4 py-3 flex items-center justify-between border-b border-border/50 shadow-sm z-20">
+        <header className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between border-b border-border/50 shadow-sm z-20">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white shadow-sm">
               <HeartPulse className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function PatientDashboard() {
         </header>
 
         {/* Mobile Tab Bar */}
-        <div className="bg-white border-b border-border/50 flex z-10">
+        <div className="bg-white dark:bg-gray-900 border-b border-border/50 flex z-10">
           <button
             onClick={() => setMobileTab("list")}
             className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all border-b-2 ${
@@ -278,7 +278,7 @@ export default function PatientDashboard() {
                 </span>
               </div>
             </div>
-            <ScrollArea className="flex-1 bg-gray-50/50 p-4">
+            <ScrollArea className="flex-1 bg-gray-50/50 dark:bg-gray-950 p-4">
               <NurseListContent />
             </ScrollArea>
           </div>

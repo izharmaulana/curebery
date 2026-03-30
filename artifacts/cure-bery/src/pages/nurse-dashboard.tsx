@@ -609,10 +609,10 @@ export default function NurseDashboard() {
   ];
 
   return (
-    <div className="flex flex-col h-screen w-full bg-gray-50 font-sans overflow-hidden">
+    <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 font-sans overflow-hidden">
 
       {/* ── Header ── */}
-      <header className="bg-white border-b border-border/50 z-50 shadow-sm flex-shrink-0">
+      <header className="bg-white dark:bg-gray-900 border-b border-border/50 z-50 shadow-sm flex-shrink-0">
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white shadow-sm">
@@ -679,7 +679,7 @@ export default function NurseDashboard() {
       <div className="hidden md:flex flex-1 overflow-hidden">
 
         {/* Icon nav rail */}
-        <nav className="w-16 flex-shrink-0 bg-white border-r border-border/50 flex flex-col items-center py-4 gap-2 shadow-sm">
+        <nav className="w-16 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-border/50 flex flex-col items-center py-4 gap-2 shadow-sm">
           {DESKTOP_TABS.map(tab => (
             <button
               key={tab.id}
@@ -698,7 +698,7 @@ export default function NurseDashboard() {
         </nav>
 
         {/* Sidebar panel */}
-        <aside className="w-72 flex-shrink-0 bg-white border-r border-border/50 flex flex-col overflow-hidden shadow-sm">
+        <aside className="w-72 flex-shrink-0 bg-white dark:bg-gray-900 border-r border-border/50 flex flex-col overflow-hidden shadow-sm">
           {activeTab === "list" && (
             <SidebarListView
               isOnline={isOnline}

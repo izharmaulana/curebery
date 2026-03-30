@@ -124,7 +124,58 @@
   }
 }
 
-/* Leaflet Overrides */
+/* ── Dark Mode: Auto-override common Tailwind background/text classes ── */
+.dark body {
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* White & light backgrounds → dark card/surface */
+.dark [class~="bg-white"] {
+  background-color: hsl(var(--card)) !important;
+}
+.dark [class~="bg-gray-50"] {
+  background-color: hsl(222 47% 7%) !important;
+}
+.dark [class~="bg-gray-100"] {
+  background-color: hsl(215 20% 14%) !important;
+}
+.dark [class~="bg-gray-200"] {
+  background-color: hsl(215 20% 18%) !important;
+}
+
+/* Borders */
+.dark [class~="border-b"],
+.dark [class~="border-t"],
+.dark [class~="border-r"],
+.dark [class~="border-l"] {
+  border-color: hsl(var(--border));
+}
+
+/* Input & search fields */
+.dark [class~="bg-white"][class~="border-border\/60"] {
+  background-color: hsl(215 20% 12%) !important;
+}
+
+/* Text colors that look bad in dark */
+.dark [class~="text-teal-950"] {
+  color: hsl(167 80% 90%) !important;
+}
+.dark [class~="text-gray-600"],
+.dark [class~="text-gray-700"],
+.dark [class~="text-gray-800"],
+.dark [class~="text-gray-900"] {
+  color: hsl(215 16% 75%) !important;
+}
+
+/* Sidebar / nav shadows → softer in dark */
+.dark [class~="shadow-\[10px_0_30px_-10px_rgba\(0\,0\,0\,0\.1\)\]"] {
+  box-shadow: 2px 0 10px rgba(0,0,0,0.4) !important;
+}
+
+/* Radius buttons (bg-gray-100 with hover:bg-gray-200) are handled above */
+
+/* ── Leaflet Overrides */
 .leaflet-container {
   font-family: var(--font-sans) !important;
   z-index: 10;
