@@ -294,7 +294,7 @@ function SidebarListView({
             <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
             <div>
               <p className="text-sm font-bold leading-none">{isOnline ? "Online" : "Offline"}</p>
-              <p className="text-[10px] text-muted-foreground mt-0.5">{isOnline ? "Pasien dapat menemukan Anda" : "Tidak terlihat oleh pasien"}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{isOnline ? "Klien dapat menemukan Anda" : "Tidak terlihat oleh klien"}</p>
             </div>
           </div>
           <Switch checked={isOnline} onCheckedChange={onStatusChange} disabled={updatePending} className="data-[state=checked]:bg-emerald-500 scale-110" />

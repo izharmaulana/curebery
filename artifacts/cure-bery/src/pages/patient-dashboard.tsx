@@ -17,7 +17,7 @@ export default function PatientDashboard() {
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
 
-  const demoUser = { id: 0, name: "Demo Pasien", email: "demo@cureberry.id", role: "patient" as const };
+  const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
   const activeUser = (user && user.role === 'patient') ? user : demoUser;
 
   const { data: nurses, isLoading, error } = useMockableNearbyNurses(
@@ -90,7 +90,7 @@ export default function PatientDashboard() {
             </div>
             <div>
               <h1 className="font-display font-bold text-xl text-foreground leading-tight">CureBery</h1>
-              <p className="text-xs text-muted-foreground font-medium">Dashboard Pasien</p>
+              <p className="text-xs text-muted-foreground font-medium">Dashboard Klien</p>
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">

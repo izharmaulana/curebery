@@ -120,7 +120,7 @@ export default function PatientRegisterPage() {
           </div>
           <h2 className="text-2xl font-bold text-foreground">Pendaftaran Berhasil!</h2>
           <p className="text-muted-foreground">Selamat datang di CureBery, <span className="font-semibold text-blue-600">{name}</span>.</p>
-          <p className="text-sm text-muted-foreground">Mengarahkan ke dashboard pasien...</p>
+          <p className="text-sm text-muted-foreground">Mengarahkan ke dashboard klien...</p>
         </div>
       </div>
     );
@@ -147,7 +147,7 @@ export default function PatientRegisterPage() {
           </div>
           <div>
             <h1 className="font-bold text-sm text-foreground leading-none">CureBery</h1>
-            <p className="text-[11px] text-muted-foreground">Daftar Pasien</p>
+            <p className="text-[11px] text-muted-foreground">Daftar Klien</p>
           </div>
         </div>
       </header>
@@ -157,9 +157,9 @@ export default function PatientRegisterPage() {
           {/* Title */}
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1.5 rounded-full mb-4">
-              <UserCircle2 className="w-3.5 h-3.5" /> Daftar sebagai Pasien
+              <UserCircle2 className="w-3.5 h-3.5" /> Daftar sebagai Klien
             </div>
-            <h2 className="text-3xl font-bold text-foreground">Buat Akun Pasien</h2>
+            <h2 className="text-3xl font-bold text-foreground">Buat Akun Klien</h2>
             <p className="text-muted-foreground mt-2 text-sm">Isi data diri Anda untuk mulai mencari perawat terdekat</p>
           </div>
 
@@ -197,7 +197,7 @@ export default function PatientRegisterPage() {
                   </div>
                   <div>
                     <h3 className="font-bold text-foreground">Data Pribadi</h3>
-                    <p className="text-xs text-muted-foreground">Isi informasi identitas Anda sebagai pasien</p>
+                    <p className="text-xs text-muted-foreground">Isi informasi identitas Anda sebagai klien</p>
                   </div>
                 </div>
 

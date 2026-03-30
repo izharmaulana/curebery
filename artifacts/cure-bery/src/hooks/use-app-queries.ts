@@ -26,7 +26,7 @@ export function useMockableLogin(role: 'patient' | 'nurse') {
           return { 
             success: true, 
             token: 'mock-token-patient', 
-            user: { id: 1, name: 'Bapak Budi (Pasien)', email: data.email, role: 'patient' as const } 
+            user: { id: 1, name: 'Bapak Budi (Klien)', email: data.email, role: 'patient' as const } 
           };
         }
         if (role === 'nurse' && data.email === 'perawat1@cureberry.id' && data.password === 'password123') {
