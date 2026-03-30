@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Send, Phone, Video,
+  ArrowLeft, Send,
   CheckCheck, ShoppingBag, X, Info, Gamepad2,
 } from "lucide-react";
 
@@ -123,14 +123,6 @@ export default function ChatPage() {
               <p className="font-bold text-sm text-foreground leading-none truncate">{nurseName}</p>
               <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{nurseSpec} · Online</p>
             </div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <button className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-teal-600 transition-colors">
-              <Phone className="w-4 h-4" />
-            </button>
-            <button className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-teal-600 transition-colors">
-              <Video className="w-4 h-4" />
-            </button>
           </div>
         </div>
       </header>
