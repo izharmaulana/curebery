@@ -10,6 +10,7 @@ import NurseRegisterPage from "@/pages/nurse-register";
 import PatientRegisterPage from "@/pages/patient-register";
 import ChatPage from "@/pages/chat";
 import TrackingPage from "@/pages/tracking";
+import GamePage from "@/pages/game";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/patient-register" component={PatientRegisterPage} />
       <Route path="/chat" component={ChatPage} />
       <Route path="/tracking" component={TrackingPage} />
+      <Route path="/game" component={GamePage} />
       <Route component={NotFound} />
     </Switch>
   );

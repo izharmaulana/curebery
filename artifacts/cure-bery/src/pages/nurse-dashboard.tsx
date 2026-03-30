@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
+import { NurseConnectModal } from "@/components/nurse/nurse-connect-modal";
 
 const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
 
@@ -32,8 +33,8 @@ const SUGGESTED_SERVICES = [
 type ActiveTab = "list" | "map" | "profile";
 
 /* ─── Nurse List Item ─── */
-function NurseListItem({ nurse, isSelected, onClick, onViewProfile }: {
-  nurse: NursePublicProfile; isSelected: boolean; onClick: () => void; onViewProfile?: (n: NursePublicProfile) => void;
+function NurseListItem({ nurse, isSelected, onClick, onViewProfile, onConnect }: {
+  nurse: NursePublicProfile; isSelected: boolean; onClick: () => void; onViewProfile?: (n: NursePublicProfile) => void; onConnect?: (n: NursePublicProfile) => void;
 }) {
   return (
     <div
@@ -86,7 +87,7 @@ function NurseListItem({ nurse, isSelected, onClick, onViewProfile }: {
             <UserCircle2 className="w-3 h-3" /> Profil
           </button>
           <button
-            onClick={e => e.stopPropagation()}
+            onClick={e => { e.stopPropagation(); onConnect?.(nurse); }}
             className="flex items-center gap-1 text-xs font-semibold text-white bg-primary border border-primary rounded-lg px-2 py-1 hover:bg-primary/90 transition-colors"
           >
             <Phone className="w-3 h-3" /> Hubungkan
@@ -461,7 +462,7 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
 function SidebarListView({
   isOnline, onStatusChange, updatePending, onlineCount, offlineCount,
   displayNurses, filterOnlineOnly, setFilterOnlineOnly, selectedNurseId, setSelectedNurseId,
-  onViewProfile,
+  onViewProfile, onConnect,
 }: {
   isOnline: boolean;
   onStatusChange: (v: boolean) => void;
@@ -474,6 +475,7 @@ function SidebarListView({
   selectedNurseId: number | null;
   setSelectedNurseId: (v: number | null | ((p: number | null) => number | null)) => void;
   onViewProfile?: (n: NursePublicProfile) => void;
+  onConnect?: (n: NursePublicProfile) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -537,6 +539,7 @@ function SidebarListView({
                 isSelected={selectedNurseId === nurse.id}
                 onClick={() => setSelectedNurseId((prev: number | null) => prev === nurse.id ? null : nurse.id)}
                 onViewProfile={onViewProfile}
+                onConnect={onConnect}
               />
             ))
           )}
@@ -568,6 +571,7 @@ export default function NurseDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
+  const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
 
   const updateStatus = useMockableUpdateStatus();
@@ -700,6 +704,7 @@ export default function NurseDashboard() {
               selectedNurseId={selectedNurseId}
               setSelectedNurseId={setSelectedNurseId}
               onViewProfile={setProfileNurse}
+              onConnect={setConnectNurse}
             />
           )}
           {activeTab === "profile" && (
@@ -742,6 +747,7 @@ export default function NurseDashboard() {
                 selectedNurseId={selectedNurseId}
                 setSelectedNurseId={setSelectedNurseId}
                 onViewProfile={setProfileNurse}
+                onConnect={setConnectNurse}
               />
             </div>
           )}
@@ -796,6 +802,14 @@ export default function NurseDashboard() {
         open={!!profileNurse}
         onClose={() => setProfileNurse(null)}
       />
+
+      {/* Nurse Connect Modal */}
+      {connectNurse && (
+        <NurseConnectModal
+          nurse={connectNurse}
+          onClose={() => setConnectNurse(null)}
+        />
+      )}
     </div>
   );
 }
