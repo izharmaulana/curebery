@@ -67,9 +67,10 @@ export default function GameSelectPage() {
             </div>
             <div>
               <p className="font-bold text-base text-foreground">Kuis Cerdas Cermat 🧠</p>
-              <p className="text-xs text-muted-foreground mt-0.5">10 soal acak Anatomi & Fisiologi</p>
+              <p className="text-xs text-muted-foreground mt-0.5">10 soal acak dari 5 kategori seputar dunia nakes</p>
               <div className="flex items-center gap-1.5 mt-2">
-                <span className="bg-fuchsia-100 text-fuchsia-700 text-[10px] font-bold px-2 py-0.5 rounded-full">100 Bank Soal</span>
+                <span className="bg-fuchsia-100 text-fuchsia-700 text-[10px] font-bold px-2 py-0.5 rounded-full">500 Bank Soal</span>
+                <span className="bg-sky-100 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-full">5 Kategori</span>
                 <span className="bg-amber-100 text-amber-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Timer 20d</span>
               </div>
             </div>
