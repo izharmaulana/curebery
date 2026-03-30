@@ -649,7 +649,7 @@ export default function NurseDashboard() {
                   kamu bisa terhubung dengan nakes yang lain
                 </p>
                 <p className="text-xs text-white/90 mt-0.5 leading-relaxed italic">
-                  jadi Jangan maluuuu yahhhhhh manaaa tau .... 😳🙈 Cihuyyyyyyyyyyy
+                  jadi Jangan maluuuu yahhhhhh 😳🙈 Cihuyyyyyyyyyyy
                 </p>
               </div>
             </div>
