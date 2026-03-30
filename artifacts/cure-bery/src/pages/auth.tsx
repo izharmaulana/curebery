@@ -60,7 +60,7 @@ export default function AuthPage() {
               <HeartPulse className="w-8 h-8" />
               <h1 className="text-2xl font-display font-bold">CureBery</h1>
             </div>
-            <p className="text-primary-foreground/80 text-sm">Platform Layanan Perawat Online</p>
+
           </div>
           
           <div className="flex border-b border-border/50">
