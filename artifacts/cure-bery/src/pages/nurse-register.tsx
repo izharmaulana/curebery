@@ -29,6 +29,8 @@ const SPECIALIZATIONS = [
   "Perawat Jiwa (Psikiatri)",
   "Perawat Bedah",
   "Perawat Homecare",
+  "Dokter Umum",
+  "Bidan",
 ];
 
 const SUGGESTED_SERVICES = [

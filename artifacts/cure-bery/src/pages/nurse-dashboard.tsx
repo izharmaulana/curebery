@@ -114,6 +114,7 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
   const SPECIALIZATIONS = [
     "Perawat Umum", "Perawat ICU", "Perawat Anak", "Perawat Geriatri",
     "Perawat Bedah", "Perawat Jiwa", "Perawat Maternitas",
+    "Dokter Umum", "Bidan",
   ];
 
   const addService = (name?: string) => {
