@@ -47,7 +47,7 @@ export default function PatientDashboard() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center h-48 text-muted-foreground gap-3">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm font-medium">Mencari perawat terdekat...</p>
+          <p className="text-sm font-medium">Mencari tenaga medis terdekat...</p>
         </div>
       ) : error ? (
         <div className="text-center p-6 text-destructive bg-destructive/5 rounded-xl border border-destructive/10">
@@ -108,7 +108,7 @@ export default function PatientDashboard() {
             Halo, {activeUser.name.split(' ')[0]} 👋
           </h2>
           <p className="text-muted-foreground text-sm mb-6">
-            Temukan perawat terbaik di sekitar Anda
+            Temukan tenaga medis terbaik di sekitar Anda
           </p>
           <div className="relative flex gap-2">
             <div className="relative flex-1">
@@ -127,7 +127,7 @@ export default function PatientDashboard() {
         </div>
 
         <div className="px-6 py-3 flex justify-between items-center border-b border-border/30 bg-white">
-          <h3 className="font-bold text-sm text-foreground">Perawat Terdekat (Radius 3km)</h3>
+          <h3 className="font-bold text-sm text-foreground">Tenaga Medis Terdekat (Radius 3km)</h3>
           <span className="text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
             {filteredNurses.length} Tersedia
           </span>
@@ -177,7 +177,7 @@ export default function PatientDashboard() {
             }`}
           >
             <List className="w-4 h-4" />
-            Daftar Perawat
+            Daftar Tenaga Medis
           </button>
           <button
             onClick={() => setMobileTab("map")}
@@ -235,7 +235,7 @@ export default function PatientDashboard() {
             {/* Floating nurse count badge */}
             <div className="absolute top-3 left-3 z-[1000] bg-white shadow-lg rounded-xl px-3 py-2 flex items-center gap-2 border border-border/50">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              <span className="text-xs font-bold text-foreground">{filteredNurses.filter(n => n.isOnline).length} perawat online</span>
+              <span className="text-xs font-bold text-foreground">{filteredNurses.filter(n => n.isOnline).length} tenaga medis online</span>
             </div>
             {/* Switch to list button */}
             <button
@@ -243,7 +243,7 @@ export default function PatientDashboard() {
               className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[1000] bg-white shadow-xl rounded-full px-5 py-3 flex items-center gap-2 border border-border/30 text-sm font-semibold text-foreground active:scale-95 transition-transform"
             >
               <List className="w-4 h-4 text-blue-600" />
-              Lihat Daftar Perawat
+              Lihat Daftar Tenaga Medis
             </button>
           </div>
         )}
