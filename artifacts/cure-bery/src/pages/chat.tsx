@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Send, ShieldPlus, Phone, Video,
-  CheckCheck, ShoppingBag, X, Info,
+  ArrowLeft, Send, Phone, Video,
+  CheckCheck, ShoppingBag, X, Info, Gamepad2,
 } from "lucide-react";
 
 interface Message {
@@ -26,14 +26,25 @@ const DEMO_MESSAGES: Message[] = [
   { id: 7, from: "nurse", text: "Boleh, Rp 175.000 sudah termasuk semua ya. Gimana? 🙏", time: "09:06", read: false },
 ];
 
+const NURSE_DEMO_MESSAGES: Message[] = [
+  { id: 1, from: "nurse", text: "Heyyyy selamat bergabung di CureBery! 👋 Sama-sama nakes ya kita 😄", time: "10:00", read: true },
+  { id: 2, from: "client", text: "Hahaha iya nih! Kamu spesialis apa?", time: "10:01", read: true },
+  { id: 3, from: "nurse", text: "Aku perawat ICU, kamu?", time: "10:02", read: true },
+  { id: 4, from: "client", text: "Wah keren! Aku perawat luka, sering ketemu pasien pasca operasi 🩹", time: "10:03", read: true },
+  { id: 5, from: "nurse", text: "Oh seru banget! Pernah nggak kamu ketemu kasus luka yang susah banget nutupnya?", time: "10:04", read: true },
+  { id: 6, from: "client", text: "Sering banget 😅 biasanya pasien DM yang paling tricky", time: "10:05", read: true },
+  { id: 7, from: "nurse", text: "Bener banget! Ngobrol sambil nunggu pasien yuk, atau mau main game dulu? 🎮", time: "10:06", read: false },
+];
+
 export default function ChatPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
   const nurseName = params.get("name") ?? "Tenaga Medis";
   const nurseSpec = params.get("spec") ?? "Perawat Umum";
+  const isNurseMode = params.get("type") === "nurse";
 
-  const [messages, setMessages] = useState<Message[]>(DEMO_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>(isNurseMode ? NURSE_DEMO_MESSAGES : DEMO_MESSAGES);
   const [input, setInput] = useState("");
   const [showOrderConfirm, setShowOrderConfirm] = useState(false);
   const [ordered, setOrdered] = useState(false);
@@ -48,14 +59,26 @@ export default function ChatPage() {
     return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   };
 
+  const NURSE_REPLIES = [
+    "Iya bener banget! Pengalaman yang sama haha 😂",
+    "Wah seru, nanti share ilmunya ya 🙏",
+    "Setuju! Kita harus saling support sesama nakes 💪",
+    "Iya nih, sambil nunggu pasien ngobrol dulu yuk 😄",
+    "Hahaha bener banget, relate sekali 🎯",
+  ];
+  let replyIdx = 0;
+
   const sendMessage = () => {
     if (!input.trim()) return;
     setMessages(prev => [...prev, { id: Date.now(), from: "client", text: input.trim(), time: now(), read: false }]);
     setInput("");
     setTimeout(() => {
+      const reply = isNurseMode
+        ? NURSE_REPLIES[replyIdx++ % NURSE_REPLIES.length]
+        : "Oke siap! Segera saya proses ya 🙏";
       setMessages(prev => [...prev, {
         id: Date.now() + 1, from: "nurse",
-        text: "Oke siap! Segera saya proses ya 🙏",
+        text: reply,
         time: now(), read: false,
       }]);
     }, 1200);
@@ -70,7 +93,7 @@ export default function ChatPage() {
   };
 
   const handleCancel = () => {
-    setLocation("/patient-dashboard");
+    setLocation(isNurseMode ? "/nurse-dashboard" : "/patient-dashboard");
   };
 
   return (
@@ -80,7 +103,7 @@ export default function ChatPage() {
       <header className="bg-white border-b border-border/50 shadow-sm z-10 flex-shrink-0">
         <div className="px-4 h-14 flex items-center gap-3">
           <button
-            onClick={() => setLocation("/patient-dashboard")}
+            onClick={() => setLocation(isNurseMode ? "/nurse-dashboard" : "/patient-dashboard")}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-foreground" />
@@ -116,7 +139,9 @@ export default function ChatPage() {
           <div className="flex justify-center">
             <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-white border border-border/40 rounded-full px-3 py-1 shadow-sm">
               <Info className="w-3 h-3" />
-              Sesi chat dimulai. Diskusikan kebutuhanmu dulu ya!
+              {isNurseMode
+                ? "Terhubung sesama nakes! Ngobrol & berbagi pengalaman 🤝"
+                : "Sesi chat dimulai. Diskusikan kebutuhanmu dulu ya!"}
             </span>
           </div>
 
@@ -167,9 +192,31 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {/* Order / Cancel buttons */}
+        {/* Footer actions */}
         <div className="px-4 pb-3 max-w-xl mx-auto">
-          {ordered ? (
+          {isNurseMode ? (
+            /* Nurse-to-nurse: Game Bareng + Tutup */
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 h-10 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-sm text-sm"
+                  onClick={() => setLocation(`/game?opponent=${encodeURIComponent(nurseName)}`)}
+                >
+                  <Gamepad2 className="w-4 h-4 mr-1.5" /> Main Game Bareng 🎮
+                </Button>
+                <Button
+                  variant="outline"
+                  className="h-10 px-4 border-border/60 text-muted-foreground hover:text-foreground hover:bg-gray-50 font-semibold rounded-xl text-sm"
+                  onClick={handleCancel}
+                >
+                  <X className="w-4 h-4 mr-1" /> Tutup
+                </Button>
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground italic">
+                sambil nunggu pasien, ngobrol dulu yuk! 😄
+              </p>
+            </div>
+          ) : ordered ? (
             <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
               <ShoppingBag className="w-4 h-4 text-emerald-600" />
               <span className="text-sm font-bold text-emerald-700">Order dikirim! Tenaga medis segera datang 🚀</span>
@@ -187,28 +234,26 @@ export default function ChatPage() {
               </div>
             </div>
           ) : (
-            <div className="flex gap-2">
-              <Button
-                className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm"
-                onClick={() => setShowOrderConfirm(true)}
-              >
-                <ShoppingBag className="w-4 h-4 mr-1.5" /> Order
-              </Button>
-              <Button
-                variant="outline"
-                className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 font-bold rounded-xl"
-                onClick={handleCancel}
-              >
-                <X className="w-4 h-4 mr-1.5" /> Cancel
-              </Button>
-            </div>
-          )}
-
-          {/* Hint text */}
-          {!ordered && (
-            <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
-              nego dulu di chat baru klik order yahhhhhhh 🙏
-            </p>
+            <>
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm"
+                  onClick={() => setShowOrderConfirm(true)}
+                >
+                  <ShoppingBag className="w-4 h-4 mr-1.5" /> Order
+                </Button>
+                <Button
+                  variant="outline"
+                  className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 font-bold rounded-xl"
+                  onClick={handleCancel}
+                >
+                  <X className="w-4 h-4 mr-1.5" /> Cancel
+                </Button>
+              </div>
+              <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
+                nego dulu di chat baru klik order yahhhhhhh 🙏
+              </p>
+            </>
           )}
         </div>
       </div>

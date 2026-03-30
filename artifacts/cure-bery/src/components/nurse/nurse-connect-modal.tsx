@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { NursePublicProfile } from "@workspace/api-client-react";
-import { X, Loader2, CheckCircle2, Gamepad2, Star, MapPin } from "lucide-react";
+import { X, CheckCircle2, Gamepad2, MessageCircle, Star, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface NurseConnectModalProps {
@@ -118,6 +118,12 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
           {/* Action buttons — only after connected */}
           {stage === "connected" && (
             <div className="space-y-2">
+              <Button
+                className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm"
+                onClick={() => setLocation(`/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse`)}
+              >
+                <MessageCircle className="w-4 h-4 mr-2" /> Chat Bareng 💬
+              </Button>
               <Button
                 className="w-full h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-md text-sm"
                 onClick={() => setLocation(`/game?opponent=${encodeURIComponent(nurse.name)}`)}
