@@ -79,9 +79,10 @@ interface NurseProfileSheetProps {
   nurse: NursePublicProfile | null;
   open: boolean;
   onClose: () => void;
+  onConnect?: () => void;
 }
 
-export function NurseProfileSheet({ nurse, open, onClose }: NurseProfileSheetProps) {
+export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProfileSheetProps) {
   if (!nurse) return null;
 
   const extra = NURSE_EXTRAS[nurse.id] ?? DEFAULT_EXTRA;
@@ -211,6 +212,7 @@ export function NurseProfileSheet({ nurse, open, onClose }: NurseProfileSheetPro
           <Button
             className="flex-1 bg-teal-600 hover:bg-teal-700 text-white shadow-md shadow-teal-500/20"
             disabled={!nurse.isOnline}
+            onClick={() => { if (nurse.isOnline) { onConnect?.(); onClose(); } }}
           >
             <Phone className="w-4 h-4 mr-2" />
             {nurse.isOnline ? "Hubungkan Sekarang" : "Sedang Offline"}

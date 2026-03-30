@@ -60,13 +60,14 @@ interface NurseMapProps {
   location?: { lat: number; lng: number };
   isOnline: boolean;
   onViewProfile?: (nurse: NursePublicProfile) => void;
+  onConnect?: (nurse: NursePublicProfile) => void;
 }
 
 function jitter(val: number, amount = 0.001) {
   return val + (Math.random() - 0.5) * amount;
 }
 
-export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewProfile }: NurseMapProps) {
+export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewProfile, onConnect }: NurseMapProps) {
   const [liveNurses, setLiveNurses] = useState(nurses);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -180,6 +181,7 @@ export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewPr
                       size="sm"
                       className={`${nurse.isOnline ? 'flex-1' : 'w-full'} bg-primary text-white hover:bg-primary/90 text-xs px-2`}
                       disabled={!nurse.isOnline}
+                      onClick={() => nurse.isOnline && onConnect?.(nurse)}
                     >
                       <Phone className="w-3 h-3 mr-1" />
                       {nurse.isOnline ? 'Hubungkan' : 'Offline'}

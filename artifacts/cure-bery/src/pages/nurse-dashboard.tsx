@@ -714,7 +714,7 @@ export default function NurseDashboard() {
 
         {/* Map */}
         <main className="flex-1 relative">
-          <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} />
+          <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
           {!isOnline && (
             <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 border border-white/20">
@@ -753,7 +753,7 @@ export default function NurseDashboard() {
           )}
           {activeTab === "map" && (
             <div className="h-full relative">
-              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} />
+              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
               {!isOnline && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
                   <WifiOff className="w-10 h-10 mb-3 opacity-80" />
@@ -801,6 +801,7 @@ export default function NurseDashboard() {
         nurse={profileNurse}
         open={!!profileNurse}
         onClose={() => setProfileNurse(null)}
+        onConnect={() => { if (profileNurse) { setConnectNurse(profileNurse); setProfileNurse(null); } }}
       />
 
       {/* Nurse Connect Modal */}
