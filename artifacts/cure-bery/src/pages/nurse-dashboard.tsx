@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useMockableUpdateStatus, useMockableNearbyNurses } from "@/hooks/use-app-queries";
@@ -110,6 +110,42 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
   const [bio, setBio] = useState("Perawat berpengalaman dengan keahlian khusus dalam perawatan intensif dan pemulihan pasca operasi. Berdedikasi memberikan pelayanan terbaik dan penuh empati kepada setiap klien.");
   const [services, setServices] = useState<string[]>(["Perawatan Luka", "Pemantauan Vital Signs", "Suntikan & Injeksi"]);
   const [serviceInput, setServiceInput] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop");
+  const [isCompressing, setIsCompressing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const compressImage = (file: File): Promise<string> =>
+    new Promise(resolve => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = e => {
+        img.onload = () => {
+          const MAX = 600;
+          let { width, height } = img;
+          if (width > MAX || height > MAX) {
+            const ratio = Math.min(MAX / width, MAX / height);
+            width = Math.round(width * ratio);
+            height = Math.round(height * ratio);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          canvas.getContext("2d")!.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.75));
+        };
+        img.src = e.target!.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsCompressing(true);
+    const compressed = await compressImage(file);
+    setAvatarUrl(compressed);
+    setIsCompressing(false);
+  };
 
   const SPECIALIZATIONS = [
     "Perawat Umum", "Perawat ICU", "Perawat Anak", "Perawat Geriatri",
@@ -138,13 +174,28 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
         <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl p-5 text-white text-center relative overflow-hidden">
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white_0%,transparent_60%)]" />
           <div className="relative">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
             <div className="relative inline-block mb-3">
               <img
-                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop"
+                src={avatarUrl}
                 alt="Avatar"
-                className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30 shadow-lg mx-auto"
+                className={`w-20 h-20 rounded-2xl object-cover border-4 border-white/30 shadow-lg mx-auto transition-opacity ${isCompressing ? "opacity-50" : ""}`}
               />
-              <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md">
+              {isCompressing && (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md hover:scale-110 transition-transform"
+              >
                 <Camera className="w-3.5 h-3.5 text-teal-600" />
               </button>
             </div>
@@ -160,6 +211,37 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
             </div>
           </div>
         </div>
+
+        {/* Upload panel — visible only when editing */}
+        {isEditing && (
+          <div
+            onClick={() => fileInputRef.current?.click()}
+            className="cursor-pointer border-2 border-dashed border-teal-300 rounded-2xl p-4 bg-teal-50/60 hover:bg-teal-50 transition-colors text-center group"
+          >
+            <div className="flex flex-col items-center gap-2">
+              <div className="w-10 h-10 rounded-full bg-teal-100 group-hover:bg-teal-200 transition-colors flex items-center justify-center">
+                {isCompressing ? (
+                  <div className="w-4 h-4 border-2 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-teal-600" />
+                )}
+              </div>
+              <div>
+                <p className="text-sm font-bold text-teal-700">
+                  {isCompressing ? "Lagi dikompresi bro..." : "Upload Foto Profil"}
+                </p>
+                <p className="text-xs text-teal-500 mt-0.5 italic font-medium">
+                  "gaya bebas yahhhhhhhh chessssssssssss" 📸
+                </p>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-teal-400 font-medium mt-0.5">
+                <span className="px-2 py-0.5 bg-white border border-teal-200 rounded-full">JPG / PNG / WEBP</span>
+                <span className="px-2 py-0.5 bg-white border border-teal-200 rounded-full">⚡ Auto-kompresi</span>
+                <span className="px-2 py-0.5 bg-white border border-teal-200 rounded-full">Max 600px</span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2">
