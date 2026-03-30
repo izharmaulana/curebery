@@ -68,13 +68,13 @@ export default function AuthPage() {
               className={`flex-1 py-4 font-semibold text-sm transition-colors ${activeTab !== 'nurse' ? 'text-blue-600 border-b-2 border-blue-600 bg-blue-50/50' : 'text-muted-foreground'}`}
               onClick={() => setActiveTab('patient')}
             >
-              Masuk Klien
+              Klien
             </button>
             <button 
               className={`flex-1 py-4 font-semibold text-sm transition-colors ${activeTab === 'nurse' ? 'text-teal-600 border-b-2 border-teal-600 bg-teal-50/50' : 'text-muted-foreground'}`}
               onClick={() => setActiveTab('nurse')}
             >
-              Masuk Perawat
+              Tenaga Medis
             </button>
           </div>
 
@@ -90,7 +90,7 @@ export default function AuthPage() {
                   <Input type="password" value={patientPassword} onChange={e => setPatientPassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={patientLogin.isPending}>
-                  {patientLogin.isPending ? "Memproses..." : "Masuk sebagai Klien"}
+                  {patientLogin.isPending ? "Memproses..." : "Klien"}
                 </Button>
                 <div className="mt-3 pt-3 border-t border-blue-100 text-center">
                   <Button
@@ -114,7 +114,7 @@ export default function AuthPage() {
                   <Input type="password" value={nursePassword} onChange={e => setNursePassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={nurseLogin.isPending}>
-                  {nurseLogin.isPending ? "Memproses..." : "Masuk sebagai Perawat"}
+                  {nurseLogin.isPending ? "Memproses..." : "Tenaga Medis"}
                 </Button>
                 <div className="mt-3 pt-3 border-t border-teal-100 text-center">
                   <Button
@@ -154,7 +154,7 @@ export default function AuthPage() {
             <div className="mx-auto w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-2 shadow-inner">
               <UserCircle2 className="w-8 h-8" />
             </div>
-            <CardTitle className="text-2xl font-display text-blue-950">Masuk sebagai Klien</CardTitle>
+            <CardTitle className="text-2xl font-display text-blue-950">Klien</CardTitle>
             <CardDescription className="text-blue-800/70">Cari perawat terdekat ke lokasi Anda dengan cepat.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -234,7 +234,7 @@ export default function AuthPage() {
             <div className="mx-auto w-16 h-16 bg-teal-100 text-teal-700 rounded-2xl flex items-center justify-center mb-2 shadow-inner">
               <ShieldPlus className="w-8 h-8" />
             </div>
-            <CardTitle className="text-2xl font-display text-teal-950">Masuk sebagai Perawat</CardTitle>
+            <CardTitle className="text-2xl font-display text-teal-950">Tenaga Medis</CardTitle>
             <CardDescription className="text-teal-800/70">Kelola status Anda dan terima permintaan klien.</CardDescription>
           </CardHeader>
           <CardContent>
