@@ -3,6 +3,8 @@ import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-le
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NursePublicProfile } from '@workspace/api-client-react';
+import { Button } from '@/components/ui/button';
+import { UserCircle, Phone } from 'lucide-react';
 
 const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
 
@@ -57,13 +59,14 @@ interface NurseMapProps {
   nurses: NursePublicProfile[];
   location?: { lat: number; lng: number };
   isOnline: boolean;
+  onViewProfile?: (nurse: NursePublicProfile) => void;
 }
 
 function jitter(val: number, amount = 0.001) {
   return val + (Math.random() - 0.5) * amount;
 }
 
-export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline }: NurseMapProps) {
+export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewProfile }: NurseMapProps) {
   const [liveNurses, setLiveNurses] = useState(nurses);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -141,13 +144,13 @@ export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline }: NurseM
               position={[nurse.lat, nurse.lng]}
               icon={createOtherNurseIcon(nurse)}
             >
-              <Popup className="font-sans" minWidth={180}>
-                <div className="p-1 space-y-1.5">
+              <Popup className="font-sans" minWidth={192}>
+                <div className="w-48 p-1 space-y-2">
                   <div className="flex items-center gap-2">
                     {nurse.avatarUrl ? (
-                      <img src={nurse.avatarUrl} alt={nurse.name} className="w-9 h-9 rounded-full object-cover border border-border/50" />
+                      <img src={nurse.avatarUrl} alt={nurse.name} className="w-10 h-10 rounded-full object-cover border border-border/50" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
+                      <div className="w-10 h-10 rounded-full bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
                         {nurse.name.charAt(0)}
                       </div>
                     )}
@@ -162,7 +165,26 @@ export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline }: NurseM
                     </span>
                     <span className="text-amber-600 font-semibold">⭐ {nurse.rating}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground font-mono">{nurse.strNumber}</p>
+                  <div className="flex gap-1.5">
+                    {nurse.isOnline && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-50 text-xs px-2"
+                        onClick={() => onViewProfile?.(nurse)}
+                      >
+                        <UserCircle className="w-3 h-3 mr-1" /> Profil
+                      </Button>
+                    )}
+                    <Button
+                      size="sm"
+                      className={`${nurse.isOnline ? 'flex-1' : 'w-full'} bg-primary text-white hover:bg-primary/90 text-xs px-2`}
+                      disabled={!nurse.isOnline}
+                    >
+                      <Phone className="w-3 h-3 mr-1" />
+                      {nurse.isOnline ? 'Hubungkan' : 'Offline'}
+                    </Button>
+                  </div>
                 </div>
               </Popup>
             </Marker>

@@ -17,14 +17,15 @@ import {
   Home, Award, DollarSign, Shield, ChevronRight, Camera,
 } from "lucide-react";
 import { NursePublicProfile } from "@workspace/api-client-react";
+import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 
 const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
 
 type ActiveTab = "list" | "map" | "profile";
 
 /* ─── Nurse List Item ─── */
-function NurseListItem({ nurse, isSelected, onClick }: {
-  nurse: NursePublicProfile; isSelected: boolean; onClick: () => void;
+function NurseListItem({ nurse, isSelected, onClick, onViewProfile }: {
+  nurse: NursePublicProfile; isSelected: boolean; onClick: () => void; onViewProfile?: (n: NursePublicProfile) => void;
 }) {
   return (
     <div
@@ -68,11 +69,20 @@ function NurseListItem({ nurse, isSelected, onClick }: {
         </div>
       </div>
       {nurse.isOnline && (
-        <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
-          <span className="text-xs font-mono text-muted-foreground">{nurse.strNumber}</span>
-          <span className="flex items-center gap-1 text-xs font-semibold text-teal-600 bg-teal-50 border border-teal-200 rounded-lg px-2 py-1">
+        <div className="mt-2 pt-2 border-t border-border/30 flex items-center gap-2">
+          <span className="text-xs font-mono text-muted-foreground flex-1 truncate">{nurse.strNumber}</span>
+          <button
+            onClick={e => { e.stopPropagation(); onViewProfile?.(nurse); }}
+            className="flex items-center gap-1 text-xs font-semibold text-teal-600 bg-teal-50 border border-teal-200 rounded-lg px-2 py-1 hover:bg-teal-100 transition-colors"
+          >
+            <UserCircle2 className="w-3 h-3" /> Profil
+          </button>
+          <button
+            onClick={e => e.stopPropagation()}
+            className="flex items-center gap-1 text-xs font-semibold text-white bg-primary border border-primary rounded-lg px-2 py-1 hover:bg-primary/90 transition-colors"
+          >
             <Phone className="w-3 h-3" /> Hubungkan
-          </span>
+          </button>
         </div>
       )}
     </div>
@@ -273,6 +283,7 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
 function SidebarListView({
   isOnline, onStatusChange, updatePending, onlineCount, offlineCount,
   displayNurses, filterOnlineOnly, setFilterOnlineOnly, selectedNurseId, setSelectedNurseId,
+  onViewProfile,
 }: {
   isOnline: boolean;
   onStatusChange: (v: boolean) => void;
@@ -284,6 +295,7 @@ function SidebarListView({
   setFilterOnlineOnly: (v: boolean | ((p: boolean) => boolean)) => void;
   selectedNurseId: number | null;
   setSelectedNurseId: (v: number | null | ((p: number | null) => number | null)) => void;
+  onViewProfile?: (n: NursePublicProfile) => void;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -346,6 +358,7 @@ function SidebarListView({
                 nurse={nurse}
                 isSelected={selectedNurseId === nurse.id}
                 onClick={() => setSelectedNurseId((prev: number | null) => prev === nurse.id ? null : nurse.id)}
+                onViewProfile={onViewProfile}
               />
             ))
           )}
@@ -376,6 +389,7 @@ export default function NurseDashboard() {
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+  const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
 
   const updateStatus = useMockableUpdateStatus();
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
@@ -480,6 +494,7 @@ export default function NurseDashboard() {
               setFilterOnlineOnly={setFilterOnlineOnly}
               selectedNurseId={selectedNurseId}
               setSelectedNurseId={setSelectedNurseId}
+              onViewProfile={setProfileNurse}
             />
           )}
           {activeTab === "profile" && (
@@ -489,7 +504,7 @@ export default function NurseDashboard() {
 
         {/* Map */}
         <main className="flex-1 relative">
-          <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} />
+          <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} />
           {!isOnline && (
             <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 border border-white/20">
@@ -521,12 +536,13 @@ export default function NurseDashboard() {
                 setFilterOnlineOnly={setFilterOnlineOnly}
                 selectedNurseId={selectedNurseId}
                 setSelectedNurseId={setSelectedNurseId}
+                onViewProfile={setProfileNurse}
               />
             </div>
           )}
           {activeTab === "map" && (
             <div className="h-full relative">
-              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} />
+              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} />
               {!isOnline && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
                   <WifiOff className="w-10 h-10 mb-3 opacity-80" />
@@ -568,6 +584,13 @@ export default function NurseDashboard() {
           ))}
         </nav>
       </div>
+
+      {/* Nurse Profile Sheet */}
+      <NurseProfileSheet
+        nurse={profileNurse}
+        open={!!profileNurse}
+        onClose={() => setProfileNurse(null)}
+      />
     </div>
   );
 }
