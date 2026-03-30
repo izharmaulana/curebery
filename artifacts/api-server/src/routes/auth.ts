@@ -153,7 +153,17 @@ router.post("/login/nurse", async (req, res) => {
   }
 });
 
-router.post("/logout", (req, res) => {
+router.post("/logout", async (req, res) => {
+  const session = req.session as any;
+  if (session?.userId && session?.role === "nurse") {
+    try {
+      await db.update(nursesTable)
+        .set({ isOnline: false, updatedAt: new Date() })
+        .where(eq(nursesTable.userId, session.userId));
+    } catch (err) {
+      req.log.error({ err }, "Failed to set nurse offline on logout");
+    }
+  }
   if (req.session) {
     req.session.destroy(() => {
       const response = LogoutResponse.parse({ success: true, message: "Logout berhasil" });
