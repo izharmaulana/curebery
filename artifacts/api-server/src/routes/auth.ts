@@ -72,7 +72,7 @@ router.post("/register/nurse", async (req, res) => {
       strNumber: body.strNumber,
       specialization: body.specialization,
       isOnline: false,
-      rating: 4.5,
+      rating: 0,
       lat: DEFAULT_LAT,
       lng: DEFAULT_LNG,
       totalPatients: 0,

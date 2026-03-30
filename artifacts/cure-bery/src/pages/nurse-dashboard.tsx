@@ -71,7 +71,11 @@ function NurseListItem({ nurse, isSelected, onClick, onViewProfile, onConnect }:
           <p className="text-xs text-muted-foreground mt-0.5">{nurse.specialization}</p>
           <div className="flex items-center gap-3 mt-1.5">
             <span className="flex items-center gap-1 text-xs text-amber-600 font-semibold">
-              <Star className="w-3 h-3 fill-current" />{nurse.rating}
+              {nurse.rating > 0 ? (
+                <><Star className="w-3 h-3 fill-current" />{nurse.rating}</>
+              ) : (
+                <span className="text-gray-400 font-medium">Baru</span>
+              )}
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="w-3 h-3" />{nurse.distanceKm} km
@@ -105,13 +109,13 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(userName);
-  const [phone, setPhone] = useState("081234567890");
-  const [address, setAddress] = useState("Jl. Sudirman No. 45, Jakarta Pusat");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [specialization, setSpecialization] = useState("Perawat Umum");
   const [rate, setRate] = useState("150000");
   const [radius, setRadius] = useState("5");
-  const [bio, setBio] = useState("Perawat berpengalaman dengan keahlian khusus dalam perawatan intensif dan pemulihan pasca operasi. Berdedikasi memberikan pelayanan terbaik dan penuh empati kepada setiap klien.");
-  const [services, setServices] = useState<string[]>(["Perawatan Luka", "Pemantauan Vital Signs", "Suntikan & Injeksi"]);
+  const [bio, setBio] = useState("");
+  const [services, setServices] = useState<string[]>([]);
   const [serviceInput, setServiceInput] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop");
   const [isCompressing, setIsCompressing] = useState(false);
@@ -249,8 +253,8 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: Star, val: "4.8", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
-            { icon: Users, val: "124", label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+            { icon: Star, val: "Baru", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
+            { icon: Users, val: "0", label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
             { icon: Award, val: "3 Thn", label: "Pengalaman", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
           ].map(s => (
             <div key={s.label} className={`${s.bg} ${s.border} border rounded-xl p-2.5 text-center`}>

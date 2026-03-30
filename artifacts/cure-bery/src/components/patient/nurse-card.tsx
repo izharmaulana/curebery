@@ -40,7 +40,11 @@ export function NurseCard({ nurse, onClick, onViewProfile, onConnect }: NurseCar
           <p className="text-xs text-muted-foreground mt-0.5 truncate">{nurse.specialization}</p>
           <div className="flex items-center gap-3 mt-1.5">
             <span className="flex items-center gap-1 text-xs text-amber-600 font-semibold">
-              <Star className="w-3 h-3 fill-current" />{nurse.rating.toFixed(1)}
+              {nurse.rating > 0 ? (
+                <><Star className="w-3 h-3 fill-current" />{nurse.rating.toFixed(1)}</>
+              ) : (
+                <span className="text-gray-400 font-medium">Baru</span>
+              )}
             </span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <MapPin className="w-3 h-3" />{nurse.distanceKm} km
