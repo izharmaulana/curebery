@@ -16,6 +16,44 @@ const DEMO_USERS: DemoUser[] = [
 
 let nextId = 100;
 
+router.post("/register/patient", (req, res) => {
+  try {
+    const { name, email, password, phone, birthDate, gender, address, bloodType } = req.body;
+
+    if (!name || !email || !password || !phone || !birthDate || !gender) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak lengkap, pastikan semua field wajib terisi" });
+      return;
+    }
+
+    const existing = DEMO_USERS.find(u => u.email === email);
+    if (existing) {
+      res.status(409).json({ error: "EMAIL_EXISTS", message: "Email sudah terdaftar, silakan gunakan email lain" });
+      return;
+    }
+
+    const newId = nextId++;
+    const newUser: DemoUser = {
+      id: newId,
+      email,
+      password,
+      name,
+      role: "patient",
+    };
+    DEMO_USERS.push(newUser);
+
+    req.log.info({ userId: newId, email }, "Patient registered");
+
+    res.status(201).json({
+      success: true,
+      user: { id: newId, email, name, role: "patient" },
+      token: `demo-token-${newId}`,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Register patient error");
+    res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak valid, periksa kembali semua field" });
+  }
+});
+
 router.post("/register/nurse", (req, res) => {
   try {
     const body = RegisterNurseBody.parse(req.body);

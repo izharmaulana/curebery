@@ -92,6 +92,16 @@ export default function AuthPage() {
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={patientLogin.isPending}>
                   {patientLogin.isPending ? "Memproses..." : "Masuk sebagai Pasien"}
                 </Button>
+                <div className="mt-3 pt-3 border-t border-blue-100 text-center">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setLocation("/patient-register")}
+                    className="w-full border-blue-200 text-blue-700 hover:bg-blue-50"
+                  >
+                    <UserPlus className="w-4 h-4 mr-2" /> Daftar sebagai Pasien
+                  </Button>
+                </div>
               </form>
             ) : (
               <form onSubmit={handleNurseLogin} className="space-y-4">
@@ -177,6 +187,19 @@ export default function AuthPage() {
                 {patientLogin.isPending ? "Memproses..." : "Masuk"}
               </Button>
             </form>
+
+            <div className="mt-4 pt-4 border-t border-blue-100/60 text-center">
+              <p className="text-sm text-blue-700/60 mb-3">Belum punya akun pasien?</p>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setLocation("/patient-register")}
+                className="w-full h-11 rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 transition-all font-medium"
+              >
+                <UserPlus className="w-4 h-4 mr-2" />
+                Daftar sebagai Pasien
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
