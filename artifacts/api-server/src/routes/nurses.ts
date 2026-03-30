@@ -21,32 +21,38 @@ router.get("/nearby", async (req, res) => {
     const params = GetNearbyNursesQueryParams.parse(req.query);
     const radiusKm = params.radius ?? 10;
 
-    const rows = await db
-      .select({
-        id: nursesTable.id,
-        userId: nursesTable.userId,
-        name: usersTable.name,
-        strNumber: nursesTable.strNumber,
-        specialization: nursesTable.specialization,
-        isOnline: nursesTable.isOnline,
-        rating: nursesTable.rating,
-        lat: nursesTable.lat,
-        lng: nursesTable.lng,
-        avatarUrl: nursesTable.avatarUrl,
-        totalPatients: nursesTable.totalPatients,
-        yearsExperience: nursesTable.yearsExperience,
-      })
-      .from(nursesTable)
-      .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id));
+  const rows = await db
+    .select({
+      id: nursesTable.id,
+      userId: nursesTable.userId,
+      name: usersTable.name,
+      strNumber: nursesTable.strNumber,
+      specialization: nursesTable.specialization,
+      isOnline: nursesTable.isOnline,
+      rating: nursesTable.rating,
+      lat: nursesTable.lat,
+      lng: nursesTable.lng,
+      avatarUrl: nursesTable.avatarUrl,
+      totalPatients: nursesTable.totalPatients,
+      yearsExperience: nursesTable.yearsExperience,
+    })
+    .from(nursesTable)
+    .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id))
+    .where(eq(nursesTable.isOnline, true));
 
     const nursesWithDistance = rows
-      .map(nurse => ({
-        ...nurse,
-        avatarUrl: nurse.avatarUrl ?? undefined,
-        distanceKm: Math.round(calcDistance(params.lat, params.lng, nurse.lat, nurse.lng) * 10) / 10,
-      }))
-      .filter(nurse => nurse.distanceKm <= radiusKm)
-      .sort((a, b) => a.distanceKm - b.distanceKm);
+      .map(nurse => {
+        if (nurse.lat == null || nurse.lng == null) return null;
+
+        return {
+          ...nurse,
+          avatarUrl: nurse.avatarUrl ?? undefined,
+          distanceKm: Math.round(
+            calcDistance(params.lat, params.lng, nurse.lat, nurse.lng) * 10
+          ) / 10,
+        };
+      })
+      .filter(nurse => nurse !== null)
 
     const response = GetNearbyNursesResponse.parse(nursesWithDistance);
     res.json(response);
