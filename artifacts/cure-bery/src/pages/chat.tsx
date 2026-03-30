@@ -64,18 +64,9 @@ export default function ChatPage() {
   const handleOrder = () => {
     setShowOrderConfirm(false);
     setOrdered(true);
-    setMessages(prev => [...prev, {
-      id: Date.now(), from: "client",
-      text: "✅ Saya sudah klik Order. Ditunggu ya kak!",
-      time: now(), read: false,
-    }]);
     setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1, from: "nurse",
-        text: "Siap! Saya akan segera datang ke lokasi Anda 🚀",
-        time: now(), read: false,
-      }]);
-    }, 1000);
+      setLocation(`/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`);
+    }, 800);
   };
 
   const handleCancel = () => {
