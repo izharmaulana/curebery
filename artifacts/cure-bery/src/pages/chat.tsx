@@ -196,7 +196,7 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 <Button
                   className="flex-1 h-10 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-sm text-sm"
-                  onClick={() => setLocation(`/game?opponent=${encodeURIComponent(nurseName)}`)}
+                  onClick={() => setLocation(`/game-select?opponent=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`)}
                 >
                   <Gamepad2 className="w-4 h-4 mr-1.5" /> Main Game Bareng 🎮
                 </Button>

@@ -77,7 +77,7 @@ export default function NurseConnectedPage() {
             <Button
               className="w-full h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-md text-sm"
               onClick={() =>
-                setLocation(`/game?opponent=${encodeURIComponent(name)}&spec=${encodeURIComponent(spec)}`)
+                setLocation(`/game-select?opponent=${encodeURIComponent(name)}&spec=${encodeURIComponent(spec)}`)
               }
             >
               <Gamepad2 className="w-4 h-4 mr-2" /> Main Game Bareng 🎮

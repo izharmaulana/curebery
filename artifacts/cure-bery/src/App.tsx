@@ -11,6 +11,8 @@ import PatientRegisterPage from "@/pages/patient-register";
 import ChatPage from "@/pages/chat";
 import TrackingPage from "@/pages/tracking";
 import GamePage from "@/pages/game";
+import GameQuizPage from "@/pages/game-quiz";
+import GameSelectPage from "@/pages/game-select";
 import NurseConnectedPage from "@/pages/nurse-connected";
 import NotFound from "@/pages/not-found";
 
@@ -34,6 +36,8 @@ function Router() {
       <Route path="/chat" component={ChatPage} />
       <Route path="/tracking" component={TrackingPage} />
       <Route path="/game" component={GamePage} />
+      <Route path="/game-quiz" component={GameQuizPage} />
+      <Route path="/game-select" component={GameSelectPage} />
       <Route path="/nurse-connected" component={NurseConnectedPage} />
       <Route component={NotFound} />
     </Switch>
