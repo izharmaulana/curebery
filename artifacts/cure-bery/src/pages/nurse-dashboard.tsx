@@ -6,17 +6,26 @@ import { NurseMap } from "@/components/map/nurse-map";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import {
   LogOut, ShieldPlus, Star, MapPin, Activity, Users,
-  CheckCircle2, List, Map, Phone, Clock, Wifi, WifiOff,
+  List, Map as MapIcon, Phone, Clock, Wifi, WifiOff,
+  UserCircle2, Edit2, CheckCircle2, X, Mail, Phone as PhoneIcon,
+  Home, Award, DollarSign, Shield, ChevronRight, Camera,
 } from "lucide-react";
 import { NursePublicProfile } from "@workspace/api-client-react";
 
 const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
 
-function NurseListItem({ nurse, isSelected, onClick }: { nurse: NursePublicProfile; isSelected: boolean; onClick: () => void }) {
+type ActiveTab = "list" | "map" | "profile";
+
+/* ─── Nurse List Item ─── */
+function NurseListItem({ nurse, isSelected, onClick }: {
+  nurse: NursePublicProfile; isSelected: boolean; onClick: () => void;
+}) {
   return (
     <div
       onClick={onClick}
@@ -38,14 +47,13 @@ function NurseListItem({ nurse, isSelected, onClick }: { nurse: NursePublicProfi
               {nurse.name.charAt(0)}
             </div>
           )}
-          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${nurse.isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`} />
+          <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${nurse.isOnline ? "bg-emerald-500" : "bg-gray-400"}`} />
         </div>
-
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-1">
             <p className="font-semibold text-sm text-foreground truncate leading-tight">{nurse.name}</p>
-            <span className={`text-xs font-bold flex-shrink-0 ${nurse.isOnline ? 'text-emerald-600' : 'text-gray-400'}`}>
-              {nurse.isOnline ? 'Online' : 'Offline'}
+            <span className={`text-xs font-bold flex-shrink-0 ${nurse.isOnline ? "text-emerald-600" : "text-gray-400"}`}>
+              {nurse.isOnline ? "Online" : "Offline"}
             </span>
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">{nurse.specialization}</p>
@@ -59,7 +67,6 @@ function NurseListItem({ nurse, isSelected, onClick }: { nurse: NursePublicProfi
           </div>
         </div>
       </div>
-
       {nurse.isOnline && (
         <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
           <span className="text-xs font-mono text-muted-foreground">{nurse.strNumber}</span>
@@ -72,121 +79,253 @@ function NurseListItem({ nurse, isSelected, onClick }: { nurse: NursePublicProfi
   );
 }
 
-export default function NurseDashboard() {
-  const [, setLocation] = useLocation();
-  const { user, logout } = useAuthStore();
+/* ─── Profile View ─── */
+function ProfileView({ userName, onLogout }: { userName: string; onLogout: () => void }) {
   const { toast } = useToast();
-  const [isOnline, setIsOnline] = useState(false);
-  const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
-  const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
-  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [name, setName] = useState(userName);
+  const [phone, setPhone] = useState("081234567890");
+  const [address, setAddress] = useState("Jl. Sudirman No. 45, Jakarta Pusat");
+  const [specialization, setSpecialization] = useState("Perawat Umum");
+  const [rate, setRate] = useState("150000");
+  const [radius, setRadius] = useState("5");
 
-  const updateStatus = useMockableUpdateStatus();
+  const SPECIALIZATIONS = [
+    "Perawat Umum", "Perawat ICU", "Perawat Anak", "Perawat Geriatri",
+    "Perawat Bedah", "Perawat Jiwa", "Perawat Maternitas",
+  ];
 
-  const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
-  const activeUser = (user && user.role === "nurse") ? user : demoNurse;
-
-  const { data: allNurses = [] } = useMockableNearbyNurses(
-    NURSE_LOCATION.lat,
-    NURSE_LOCATION.lng,
-    5
-  );
-
-  const displayNurses = useMemo(() =>
-    filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses,
-    [allNurses, filterOnlineOnly]
-  );
-
-  const onlineCount = allNurses.filter(n => n.isOnline).length;
-  const offlineCount = allNurses.length - onlineCount;
-
-  const handleLogout = () => { logout(); setLocation("/"); };
-
-  const handleStatusChange = async (checked: boolean) => {
-    setIsOnline(checked);
-    try {
-      await updateStatus.mutateAsync({ isOnline: checked });
-      toast({
-        title: "Status Diperbarui",
-        description: `Anda sekarang ${checked ? "Online dan siap menerima panggilan 🟢" : "Offline ⚫"}`,
-      });
-    } catch {
-      setIsOnline(!checked);
-      toast({ title: "Gagal memperbarui status", variant: "destructive" });
-    }
+  const handleSave = () => {
+    setIsEditing(false);
+    toast({ title: "Profil Diperbarui", description: "Data profil Anda berhasil disimpan." });
   };
 
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-      {/* Profile card */}
-      <div className="p-4 border-b border-border/40">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="relative">
-            <img
-              src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=80&h=80&fit=crop"
-              alt="Avatar"
-              className="w-12 h-12 rounded-xl object-cover border border-border/40 shadow-sm"
-            />
-            <span className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${isOnline ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="font-bold text-sm text-foreground truncate">{activeUser.name}</p>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Activity className="w-3 h-3 text-teal-600" /> Perawat Umum
-            </p>
-            <Badge variant="secondary" className="mt-1 text-[10px] font-mono bg-teal-50 text-teal-700 border-teal-200 h-5">
-              STR-2024-001234
-            </Badge>
-          </div>
-        </div>
+  return (
+    <ScrollArea className="h-full">
+      <div className="p-4 space-y-4">
 
-        {/* Status toggle */}
-        <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isOnline ? 'bg-emerald-50 border-emerald-200' : 'bg-gray-50 border-border/50'}`}>
-          <div className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-            <div>
-              <p className="text-sm font-bold">{isOnline ? 'Online' : 'Offline'}</p>
-              <p className="text-[10px] text-muted-foreground">{isOnline ? 'Pasien dapat menemukan Anda' : 'Tidak terlihat oleh pasien'}</p>
+        {/* Avatar & name */}
+        <div className="bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl p-5 text-white text-center relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,white_0%,transparent_60%)]" />
+          <div className="relative">
+            <div className="relative inline-block mb-3">
+              <img
+                src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop"
+                alt="Avatar"
+                className="w-20 h-20 rounded-2xl object-cover border-4 border-white/30 shadow-lg mx-auto"
+              />
+              <button className="absolute -bottom-1 -right-1 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-md">
+                <Camera className="w-3.5 h-3.5 text-teal-600" />
+              </button>
+            </div>
+            <h2 className="font-bold text-lg leading-tight">{name}</h2>
+            <p className="text-white/80 text-sm mt-0.5">{specialization}</p>
+            <div className="flex items-center justify-center gap-2 mt-2">
+              <Badge className="bg-white/20 text-white border-white/30 text-xs font-mono hover:bg-white/30">
+                STR-2024-001234
+              </Badge>
+              <Badge className="bg-emerald-400/30 text-white border-emerald-300/40 text-xs hover:bg-emerald-400/40">
+                <CheckCircle2 className="w-3 h-3 mr-1" /> Terverifikasi
+              </Badge>
             </div>
           </div>
-          <Switch
-            checked={isOnline}
-            onCheckedChange={handleStatusChange}
-            disabled={updateStatus.isPending}
-            className="data-[state=checked]:bg-emerald-500 scale-110"
-          />
         </div>
 
-        {/* Quick stats */}
+        {/* Stats row */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { icon: Star, val: "4.8", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
+            { icon: Users, val: "124", label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+            { icon: Award, val: "3 Thn", label: "Pengalaman", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+          ].map(s => (
+            <div key={s.label} className={`${s.bg} ${s.border} border rounded-xl p-2.5 text-center`}>
+              <div className={`font-bold text-base ${s.color} flex items-center justify-center gap-1`}>
+                <s.icon className="w-3.5 h-3.5 fill-current" />{s.val}
+              </div>
+              <div className="text-[10px] text-muted-foreground mt-0.5">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Edit toggle */}
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-sm text-foreground">Informasi Pribadi</h3>
+          {isEditing ? (
+            <div className="flex gap-2">
+              <button onClick={() => setIsEditing(false)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border/60 rounded-lg px-2.5 py-1.5 hover:bg-gray-50">
+                <X className="w-3.5 h-3.5" /> Batal
+              </button>
+              <button onClick={handleSave} className="flex items-center gap-1 text-xs text-white bg-teal-600 rounded-lg px-2.5 py-1.5 hover:bg-teal-700">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Simpan
+              </button>
+            </div>
+          ) : (
+            <button onClick={() => setIsEditing(true)} className="flex items-center gap-1.5 text-xs font-semibold text-teal-600 border border-teal-200 bg-teal-50 rounded-lg px-2.5 py-1.5 hover:bg-teal-100 transition-colors">
+              <Edit2 className="w-3.5 h-3.5" /> Edit Profil
+            </button>
+          )}
+        </div>
+
+        {/* Info fields */}
+        <div className="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden divide-y divide-border/40">
+          {isEditing ? (
+            <div className="p-4 space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nama Lengkap</Label>
+                <Input value={name} onChange={e => setName(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Nomor HP</Label>
+                <Input value={phone} onChange={e => setPhone(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Spesialisasi</Label>
+                <select
+                  value={specialization}
+                  onChange={e => setSpecialization(e.target.value)}
+                  className="w-full h-9 text-sm px-3 border border-border/60 rounded-md bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400"
+                >
+                  {SPECIALIZATIONS.map(s => <option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Alamat</Label>
+                <Input value={address} onChange={e => setAddress(e.target.value)} className="h-9 text-sm" />
+              </div>
+            </div>
+          ) : (
+            <>
+              {[
+                { icon: UserCircle2, label: "Nama", value: name },
+                { icon: Mail, label: "Email", value: "perawat@cureberry.id" },
+                { icon: PhoneIcon, label: "Nomor HP", value: phone },
+                { icon: Activity, label: "Spesialisasi", value: specialization },
+                { icon: Home, label: "Alamat", value: address },
+              ].map(item => (
+                <div key={item.label} className="flex items-center gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0">
+                    <item.icon className="w-4 h-4 text-teal-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{item.label}</p>
+                    <p className="text-sm text-foreground font-medium truncate">{item.value}</p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                </div>
+              ))}
+            </>
+          )}
+        </div>
+
+        {/* Service settings */}
+        <div>
+          <h3 className="font-bold text-sm text-foreground mb-2">Pengaturan Layanan</h3>
+          <div className="bg-white rounded-2xl border border-border/50 shadow-sm overflow-hidden divide-y divide-border/40">
+            {isEditing ? (
+              <div className="p-4 space-y-3">
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tarif Dasar (Rp / visit)</Label>
+                  <Input value={rate} onChange={e => setRate(e.target.value)} type="number" className="h-9 text-sm" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Radius Layanan (km)</Label>
+                  <Input value={radius} onChange={e => setRadius(e.target.value)} type="number" className="h-9 text-sm" />
+                </div>
+              </div>
+            ) : (
+              <>
+                {[
+                  { icon: DollarSign, label: "Tarif Dasar", value: `Rp ${parseInt(rate).toLocaleString("id")} / visit`, color: "bg-green-50", iconColor: "text-green-600" },
+                  { icon: MapPin, label: "Radius Layanan", value: `${radius} km dari lokasi`, color: "bg-blue-50", iconColor: "text-blue-600" },
+                  { icon: Shield, label: "Status STR", value: "Aktif s/d Desember 2026", color: "bg-purple-50", iconColor: "text-purple-600" },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-3 px-4 py-3">
+                    <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center flex-shrink-0`}>
+                      <item.icon className={`w-4 h-4 ${item.iconColor}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">{item.label}</p>
+                      <p className="text-sm text-foreground font-medium">{item.value}</p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Logout */}
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl border border-red-200 text-red-600 bg-red-50 hover:bg-red-100 font-semibold text-sm transition-colors"
+        >
+          <LogOut className="w-4 h-4" /> Keluar dari Akun
+        </button>
+
+        <div className="h-2" />
+      </div>
+    </ScrollArea>
+  );
+}
+
+/* ─── Sidebar List View ─── */
+function SidebarListView({
+  isOnline, onStatusChange, updatePending, onlineCount, offlineCount,
+  displayNurses, filterOnlineOnly, setFilterOnlineOnly, selectedNurseId, setSelectedNurseId,
+}: {
+  isOnline: boolean;
+  onStatusChange: (v: boolean) => void;
+  updatePending: boolean;
+  onlineCount: number;
+  offlineCount: number;
+  displayNurses: NursePublicProfile[];
+  filterOnlineOnly: boolean;
+  setFilterOnlineOnly: (v: boolean | ((p: boolean) => boolean)) => void;
+  selectedNurseId: number | null;
+  setSelectedNurseId: (v: number | null | ((p: number | null) => number | null)) => void;
+}) {
+  return (
+    <div className="flex flex-col h-full">
+      {/* Profile mini card */}
+      <div className="p-4 border-b border-border/40">
+        <div className={`flex items-center justify-between p-3 rounded-xl border transition-all ${isOnline ? "bg-emerald-50 border-emerald-200" : "bg-gray-50 border-border/50"}`}>
+          <div className="flex items-center gap-2.5">
+            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
+            <div>
+              <p className="text-sm font-bold leading-none">{isOnline ? "Online" : "Offline"}</p>
+              <p className="text-[10px] text-muted-foreground mt-0.5">{isOnline ? "Pasien dapat menemukan Anda" : "Tidak terlihat oleh pasien"}</p>
+            </div>
+          </div>
+          <Switch checked={isOnline} onCheckedChange={onStatusChange} disabled={updatePending} className="data-[state=checked]:bg-emerald-500 scale-110" />
+        </div>
+
         <div className="grid grid-cols-3 gap-2 mt-3">
-          <div className="bg-gray-50 rounded-lg p-2 text-center border border-border/40">
-            <div className="text-base font-bold text-amber-500 flex items-center justify-center gap-0.5">4.8 <Star className="w-3 h-3 fill-current" /></div>
-            <div className="text-[10px] text-muted-foreground">Rating</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-2 text-center border border-border/40">
-            <div className="text-base font-bold text-blue-600 flex items-center justify-center gap-0.5">124 <Users className="w-3 h-3" /></div>
-            <div className="text-[10px] text-muted-foreground">Layanan</div>
-          </div>
-          <div className="bg-gray-50 rounded-lg p-2 text-center border border-border/40">
-            <div className="text-base font-bold text-teal-600 flex items-center justify-center gap-0.5">5 <MapPin className="w-3 h-3" /></div>
-            <div className="text-[10px] text-muted-foreground">km Radius</div>
-          </div>
+          {[
+            { val: "4.8 ★", label: "Rating", cls: "text-amber-500" },
+            { val: "124", label: "Layanan", cls: "text-blue-600" },
+            { val: `${isOnline ? "🟢" : "⚫"} ${isOnline ? "Live" : "Paused"}`, label: "Status", cls: "text-teal-600" },
+          ].map(s => (
+            <div key={s.label} className="bg-gray-50 rounded-lg p-2 text-center border border-border/40">
+              <div className={`text-sm font-bold ${s.cls}`}>{s.val}</div>
+              <div className="text-[10px] text-muted-foreground">{s.label}</div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* Nurse list */}
+      {/* List header */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-border/30">
         <div>
           <h3 className="font-bold text-sm text-foreground">Perawat di Area Ini</h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            <span className="text-emerald-600 font-semibold">{onlineCount} online</span>
-            {" · "}
+            <span className="text-emerald-600 font-semibold">{onlineCount} online</span>{" · "}
             <span className="text-gray-500">{offlineCount} offline</span>
           </p>
         </div>
         <button
-          onClick={() => setFilterOnlineOnly(p => !p)}
-          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${filterOnlineOnly ? 'bg-emerald-500 text-white border-emerald-500' : 'bg-white text-muted-foreground border-border/50 hover:border-emerald-300'}`}
+          onClick={() => setFilterOnlineOnly((p: boolean) => !p)}
+          className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg border transition-all ${filterOnlineOnly ? "bg-emerald-500 text-white border-emerald-500" : "bg-white text-muted-foreground border-border/50 hover:border-emerald-300"}`}
         >
           {filterOnlineOnly ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}
           Online
@@ -206,35 +345,74 @@ export default function NurseDashboard() {
                 key={nurse.id}
                 nurse={nurse}
                 isSelected={selectedNurseId === nurse.id}
-                onClick={() => setSelectedNurseId(prev => prev === nurse.id ? null : nurse.id)}
+                onClick={() => setSelectedNurseId((prev: number | null) => prev === nurse.id ? null : nurse.id)}
               />
             ))
           )}
         </div>
       </ScrollArea>
 
-      {/* Info strip */}
       <div className="p-3 border-t border-border/30 bg-gray-50/80">
         <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <Clock className="w-3.5 h-3.5 text-teal-500 flex-shrink-0" />
-          Posisi diperbarui otomatis setiap 4 detik · {isOnline ? '🟢 Live' : '⚫ Paused'}
+          Posisi diperbarui tiap 4 detik · {isOnline ? "🟢 Live" : "⚫ Paused"}
         </div>
         {!isOnline && (
-          <Button
-            size="sm"
-            onClick={() => handleStatusChange(true)}
-            className="w-full mt-2 h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded-lg"
-          >
+          <Button size="sm" onClick={() => onStatusChange(true)} className="w-full mt-2 h-8 text-xs bg-teal-600 hover:bg-teal-700 text-white rounded-lg">
             Mulai Bekerja Sekarang
           </Button>
         )}
       </div>
     </div>
   );
+}
+
+/* ─── Main Component ─── */
+export default function NurseDashboard() {
+  const [, setLocation] = useLocation();
+  const { user, logout } = useAuthStore();
+  const { toast } = useToast();
+  const [isOnline, setIsOnline] = useState(false);
+  const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState<ActiveTab>("list");
+  const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+
+  const updateStatus = useMockableUpdateStatus();
+  const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
+  const activeUser = (user && user.role === "nurse") ? user : demoNurse;
+
+  const { data: allNurses = [] } = useMockableNearbyNurses(NURSE_LOCATION.lat, NURSE_LOCATION.lng, 5);
+  const displayNurses = useMemo(() => filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses, [allNurses, filterOnlineOnly]);
+  const onlineCount = allNurses.filter(n => n.isOnline).length;
+  const offlineCount = allNurses.length - onlineCount;
+
+  const handleLogout = () => { logout(); setLocation("/"); };
+  const handleStatusChange = async (checked: boolean) => {
+    setIsOnline(checked);
+    try {
+      await updateStatus.mutateAsync({ isOnline: checked });
+      toast({ title: "Status Diperbarui", description: `Anda sekarang ${checked ? "Online 🟢" : "Offline ⚫"}` });
+    } catch {
+      setIsOnline(!checked);
+      toast({ title: "Gagal memperbarui status", variant: "destructive" });
+    }
+  };
+
+  const DESKTOP_TABS = [
+    { id: "list" as ActiveTab, icon: List, label: "Perawat" },
+    { id: "profile" as ActiveTab, icon: UserCircle2, label: "Profil" },
+  ];
+
+  const MOBILE_TABS = [
+    { id: "list" as ActiveTab, icon: List, label: "Daftar" },
+    { id: "map" as ActiveTab, icon: MapIcon, label: "Peta", dot: isOnline },
+    { id: "profile" as ActiveTab, icon: UserCircle2, label: "Profil" },
+  ];
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 font-sans overflow-hidden">
-      {/* Top Header */}
+
+      {/* ── Header ── */}
       <header className="bg-white border-b border-border/50 z-50 shadow-sm flex-shrink-0">
         <div className="px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -246,32 +424,67 @@ export default function NurseDashboard() {
               <p className="text-[10px] text-teal-700/70 font-medium">Portal Tenaga Medis</p>
             </div>
           </div>
-
           <div className="flex items-center gap-3">
-            {/* Status badge (desktop) */}
-            <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${isOnline ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-gray-100 border-border/60 text-gray-500'}`}>
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-gray-400'}`} />
-              {isOnline ? 'Online' : 'Offline'}
-              <Switch
-                checked={isOnline}
-                onCheckedChange={handleStatusChange}
-                disabled={updateStatus.isPending}
-                className="data-[state=checked]:bg-emerald-500 ml-1 scale-90"
-              />
+            <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${isOnline ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-gray-100 border-border/60 text-gray-500"}`}>
+              <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
+              {isOnline ? "Online" : "Offline"}
+              <Switch checked={isOnline} onCheckedChange={handleStatusChange} disabled={updateStatus.isPending} className="data-[state=checked]:bg-emerald-500 ml-1 scale-90" />
             </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 gap-1.5">
+            {/* Profile avatar button (desktop) */}
+            <button
+              onClick={() => setActiveTab("profile")}
+              className={`hidden md:flex w-9 h-9 rounded-full overflow-hidden border-2 transition-all ${activeTab === "profile" ? "border-teal-500 shadow-md shadow-teal-500/20" : "border-border/40 hover:border-teal-300"}`}
+            >
+              <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=80&h=80&fit=crop" alt="Avatar" className="w-full h-full object-cover" />
+            </button>
+            <Button variant="ghost" size="sm" onClick={handleLogout} className="md:hidden text-muted-foreground hover:text-destructive hover:bg-destructive/10">
               <LogOut className="w-4 h-4" />
-              <span className="hidden sm:inline text-sm">Keluar</span>
             </Button>
           </div>
         </div>
       </header>
 
-      {/* ── DESKTOP LAYOUT: sidebar + map ── */}
+      {/* ── DESKTOP: icon nav + sidebar + map ── */}
       <div className="hidden md:flex flex-1 overflow-hidden">
-        {/* Sidebar */}
-        <aside className="w-80 flex-shrink-0 bg-white border-r border-border/50 flex flex-col overflow-hidden shadow-sm">
-          <SidebarContent />
+
+        {/* Icon nav rail */}
+        <nav className="w-16 flex-shrink-0 bg-white border-r border-border/50 flex flex-col items-center py-4 gap-2 shadow-sm">
+          {DESKTOP_TABS.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              title={tab.label}
+              className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center gap-1 transition-all ${
+                activeTab === tab.id
+                  ? "bg-teal-600 text-white shadow-md shadow-teal-600/30"
+                  : "text-muted-foreground hover:bg-gray-100 hover:text-teal-600"
+              }`}
+            >
+              <tab.icon className="w-5 h-5" />
+              <span className="text-[9px] font-semibold">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Sidebar panel */}
+        <aside className="w-72 flex-shrink-0 bg-white border-r border-border/50 flex flex-col overflow-hidden shadow-sm">
+          {activeTab === "list" && (
+            <SidebarListView
+              isOnline={isOnline}
+              onStatusChange={handleStatusChange}
+              updatePending={updateStatus.isPending}
+              onlineCount={onlineCount}
+              offlineCount={offlineCount}
+              displayNurses={displayNurses}
+              filterOnlineOnly={filterOnlineOnly}
+              setFilterOnlineOnly={setFilterOnlineOnly}
+              selectedNurseId={selectedNurseId}
+              setSelectedNurseId={setSelectedNurseId}
+            />
+          )}
+          {activeTab === "profile" && (
+            <ProfileView userName={activeUser.name} onLogout={handleLogout} />
+          )}
         </aside>
 
         {/* Map */}
@@ -283,11 +496,8 @@ export default function NurseDashboard() {
                 <WifiOff className="w-8 h-8" />
               </div>
               <h3 className="text-2xl font-bold mb-2">Anda Sedang Offline</h3>
-              <p className="text-white/70 text-sm mb-6 max-w-xs text-center">Aktifkan status untuk memulai live tracking dan terlihat oleh pasien</p>
-              <Button
-                onClick={() => handleStatusChange(true)}
-                className="bg-teal-500 hover:bg-teal-600 text-white px-8 h-12 rounded-xl font-semibold shadow-lg transition-all hover:scale-105"
-              >
+              <p className="text-white/70 text-sm mb-6 max-w-xs text-center">Aktifkan status untuk memulai live tracking</p>
+              <Button onClick={() => handleStatusChange(true)} className="bg-teal-500 hover:bg-teal-600 text-white px-8 h-12 rounded-xl font-semibold shadow-lg transition-all hover:scale-105">
                 Mulai Bekerja Sekarang
               </Button>
             </div>
@@ -295,58 +505,68 @@ export default function NurseDashboard() {
         </main>
       </div>
 
-      {/* ── MOBILE LAYOUT: tabs ── */}
+      {/* ── MOBILE: content + bottom tabs ── */}
       <div className="flex md:hidden flex-col flex-1 overflow-hidden">
-        {/* Tab bar */}
-        <div className="flex border-b border-border/50 bg-white flex-shrink-0">
-          <button
-            onClick={() => setMobileTab("list")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all border-b-2 ${mobileTab === "list" ? "border-teal-600 text-teal-600 bg-teal-50/50" : "border-transparent text-muted-foreground"}`}
-          >
-            <List className="w-4 h-4" /> Daftar Perawat
-          </button>
-          <button
-            onClick={() => setMobileTab("map")}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition-all border-b-2 ${mobileTab === "map" ? "border-teal-600 text-teal-600 bg-teal-50/50" : "border-transparent text-muted-foreground"}`}
-          >
-            <Map className="w-4 h-4" /> Peta Live
-            {isOnline && <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse ml-0.5" />}
-          </button>
+        <div className="flex-1 overflow-hidden">
+          {activeTab === "list" && (
+            <div className="h-full bg-white overflow-hidden">
+              <SidebarListView
+                isOnline={isOnline}
+                onStatusChange={handleStatusChange}
+                updatePending={updateStatus.isPending}
+                onlineCount={onlineCount}
+                offlineCount={offlineCount}
+                displayNurses={displayNurses}
+                filterOnlineOnly={filterOnlineOnly}
+                setFilterOnlineOnly={setFilterOnlineOnly}
+                selectedNurseId={selectedNurseId}
+                setSelectedNurseId={setSelectedNurseId}
+              />
+            </div>
+          )}
+          {activeTab === "map" && (
+            <div className="h-full relative">
+              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} />
+              {!isOnline && (
+                <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
+                  <WifiOff className="w-10 h-10 mb-3 opacity-80" />
+                  <h3 className="text-xl font-bold mb-1 text-center">Anda Sedang Offline</h3>
+                  <p className="text-white/70 text-sm text-center mb-5">Aktifkan status untuk live tracking</p>
+                  <Button onClick={() => handleStatusChange(true)} className="bg-teal-500 hover:bg-teal-600 text-white px-6 h-11 rounded-xl font-semibold">
+                    Aktifkan Sekarang
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
+          {activeTab === "profile" && (
+            <div className="h-full bg-gray-50 overflow-hidden">
+              <ProfileView userName={activeUser.name} onLogout={handleLogout} />
+            </div>
+          )}
         </div>
 
-        {/* Mobile: List tab */}
-        {mobileTab === "list" && (
-          <div className="flex-1 overflow-hidden bg-white">
-            <SidebarContent />
-          </div>
-        )}
-
-        {/* Mobile: Map tab */}
-        {mobileTab === "map" && (
-          <div className="flex-1 relative">
-            <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} />
-            {!isOnline && (
-              <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
-                <WifiOff className="w-10 h-10 mb-3 opacity-80" />
-                <h3 className="text-xl font-bold mb-1 text-center">Anda Sedang Offline</h3>
-                <p className="text-white/70 text-sm text-center mb-5">Aktifkan status untuk memulai live tracking</p>
-                <Button
-                  onClick={() => { handleStatusChange(true); }}
-                  className="bg-teal-500 hover:bg-teal-600 text-white px-6 h-11 rounded-xl font-semibold"
-                >
-                  Aktifkan Sekarang
-                </Button>
-              </div>
-            )}
-            {/* Floating switch to list button */}
+        {/* Bottom tab bar */}
+        <nav className="flex-shrink-0 bg-white border-t border-border/50 flex shadow-[0_-4px_20px_-8px_rgba(0,0,0,0.1)]">
+          {MOBILE_TABS.map(tab => (
             <button
-              onClick={() => setMobileTab("list")}
-              className="absolute bottom-6 left-1/2 -translate-x-1/2 z-[600] bg-white shadow-xl rounded-full px-5 py-3 flex items-center gap-2 border border-border/30 text-sm font-semibold active:scale-95 transition-transform"
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all relative ${
+                activeTab === tab.id ? "text-teal-600" : "text-muted-foreground hover:text-teal-500"
+              }`}
             >
-              <List className="w-4 h-4 text-teal-600" /> Lihat Daftar Perawat
+              <div className="relative">
+                <tab.icon className={`w-5 h-5 transition-transform ${activeTab === tab.id ? "scale-110" : ""}`} />
+                {tab.dot && <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-500 border border-white animate-pulse" />}
+              </div>
+              <span className="text-[10px] font-semibold">{tab.label}</span>
+              {activeTab === tab.id && (
+                <span className="absolute top-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-teal-500 rounded-full" />
+              )}
             </button>
-          </div>
-        )}
+          ))}
+        </nav>
       </div>
     </div>
   );
