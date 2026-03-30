@@ -26,6 +26,21 @@ export const nursesTable = pgTable("nurses", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const connectionsTable = pgTable("connections", {
+  id: serial("id").primaryKey(),
+  patientUserId: serial("patient_user_id").references(() => usersTable.id).notNull(),
+  nurseUserId: serial("nurse_user_id").references(() => usersTable.id).notNull(),
+  nurseProfileId: serial("nurse_profile_id").references(() => nursesTable.id).notNull(),
+  status: text("status", { enum: ["pending", "accepted", "rejected"] }).default("pending").notNull(),
+  patientName: text("patient_name").notNull(),
+  nurseName: text("nurse_name").notNull(),
+  nurseSpec: text("nurse_spec").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Connection = typeof connectionsTable.$inferSelect;
+
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
 export const insertNurseSchema = createInsertSchema(nursesTable).omit({ id: true, updatedAt: true });
 

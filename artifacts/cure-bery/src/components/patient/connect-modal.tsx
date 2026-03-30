@@ -1,34 +1,81 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { X, Phone, CheckCircle2, Loader2, Star, MapPin } from "lucide-react";
+import { X, Phone, CheckCircle2, Loader2, Star, MapPin, XCircle } from "lucide-react";
 
 interface ConnectModalProps {
   nurse: NursePublicProfile;
   onClose: () => void;
 }
 
-type Stage = "idle" | "requesting" | "waiting" | "accepted";
+type Stage = "idle" | "requesting" | "waiting" | "accepted" | "rejected" | "error";
 
 export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
   const [, setLocation] = useLocation();
   const [stage, setStage] = useState<Stage>("idle");
+  const [connectionId, setConnectionId] = useState<number | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const handleSend = () => {
-    setStage("requesting");
-    setTimeout(() => setStage("waiting"), 1200);
-    setTimeout(() => setStage("accepted"), 3200);
+  const stopPolling = () => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
   };
 
+  useEffect(() => () => stopPolling(), []);
+
   useEffect(() => {
-    if (stage === "accepted") {
+    if (stage === "accepted" && connectionId) {
       const t = setTimeout(() => {
-        setLocation(`/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}`);
+        setLocation(`/chat?connectionId=${connectionId}&name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}`);
       }, 1200);
       return () => clearTimeout(t);
     }
-  }, [stage]);
+  }, [stage, connectionId]);
+
+  const startPolling = (connId: number) => {
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/connections/${connId}`, { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.status === "accepted") {
+          stopPolling();
+          setStage("accepted");
+        } else if (data.status === "rejected") {
+          stopPolling();
+          setStage("rejected");
+        }
+      } catch { }
+    }, 2000);
+  };
+
+  const handleSend = async () => {
+    setStage("requesting");
+    try {
+      const res = await fetch("/api/connections", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ nurseProfileId: nurse.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setErrorMsg(data.message ?? "Gagal mengirim permintaan");
+        setStage("error");
+        return;
+      }
+      setConnectionId(data.connectionId);
+      setStage("waiting");
+      startPolling(data.connectionId);
+    } catch {
+      setErrorMsg("Tidak bisa terhubung ke server");
+      setStage("error");
+    }
+  };
 
   const initials = nurse.name.split(" ").map(n => n[0]).join("").substring(0, 2);
 
@@ -38,9 +85,8 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
         className="w-full max-w-sm bg-white rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
         onClick={e => e.stopPropagation()}
       >
-        {/* Gradient header */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-700 px-6 pt-6 pb-8 text-white text-center relative">
-          {stage === "idle" && (
+          {(stage === "idle" || stage === "error" || stage === "rejected") && (
             <button
               onClick={onClose}
               className="absolute top-4 right-4 w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
@@ -69,13 +115,12 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
           </div>
         </div>
 
-        {/* Body */}
         <div className="px-6 py-5 -mt-4">
           <div className="bg-white rounded-2xl border border-border/50 shadow-sm p-4 space-y-3 mb-4">
             {stage === "idle" && (
               <>
                 <p className="text-sm text-muted-foreground text-center leading-relaxed">
-                  Kirim permintaan hubungan ke <span className="font-semibold text-foreground">{nurse.name.split(" ")[0]}</span>. Tunggu konfirmasi dari mereka sebelum bisa chat.
+                  Kirim permintaan ke <span className="font-semibold text-foreground">{nurse.name.split(" ")[0]}</span>. Tunggu konfirmasi sebelum bisa chat.
                 </p>
                 <div className="flex items-center gap-2 bg-blue-50 rounded-xl px-3 py-2.5 border border-blue-100">
                   <Phone className="w-4 h-4 text-blue-600 flex-shrink-0" />
@@ -88,7 +133,6 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
               <div className="py-2 text-center space-y-2">
                 <Loader2 className="w-8 h-8 animate-spin text-blue-500 mx-auto" />
                 <p className="text-sm font-semibold text-foreground">Mengirim permintaan...</p>
-                <p className="text-xs text-muted-foreground">Mohon tunggu sebentar</p>
               </div>
             )}
 
@@ -113,6 +157,26 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
                 <p className="text-xs text-muted-foreground">Mengalihkan ke halaman chat...</p>
               </div>
             )}
+
+            {stage === "rejected" && (
+              <div className="py-2 text-center space-y-2">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                  <XCircle className="w-7 h-7 text-red-500" />
+                </div>
+                <p className="text-sm font-bold text-red-600">{nurse.name.split(" ")[0]} tidak bisa menerima sekarang</p>
+                <p className="text-xs text-muted-foreground">Coba hubungi perawat lain</p>
+              </div>
+            )}
+
+            {stage === "error" && (
+              <div className="py-2 text-center space-y-2">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto">
+                  <XCircle className="w-7 h-7 text-red-500" />
+                </div>
+                <p className="text-sm font-bold text-red-600">Gagal mengirim permintaan</p>
+                <p className="text-xs text-muted-foreground">{errorMsg}</p>
+              </div>
+            )}
           </div>
 
           {stage === "idle" && (
@@ -121,6 +185,12 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
               onClick={handleSend}
             >
               <Phone className="w-4 h-4 mr-2" /> Kirim Permintaan Hubungan
+            </Button>
+          )}
+
+          {(stage === "error" || stage === "rejected") && (
+            <Button className="w-full h-11 font-bold rounded-xl text-sm" variant="outline" onClick={onClose}>
+              Tutup
             </Button>
           )}
 

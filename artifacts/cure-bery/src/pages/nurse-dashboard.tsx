@@ -22,6 +22,7 @@ import {
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { NurseConnectModal } from "@/components/nurse/nurse-connect-modal";
+import { IncomingConnectNotif } from "@/components/nurse/incoming-connect-notif";
 import { useGeolocation } from "@/hooks/use-geolocation";
 import { requestNotifPermission, notifyNurseNewOrder } from "@/lib/notifications";
 
@@ -575,6 +576,8 @@ export default function NurseDashboard() {
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
   const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [incomingRequest, setIncomingRequest] = useState<{ id: number; patientName: string; nurseSpec: string } | null>(null);
+  const incomingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const updateStatus = useMockableUpdateStatus();
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
@@ -590,6 +593,49 @@ export default function NurseDashboard() {
   useEffect(() => {
     requestNotifPermission();
   }, []);
+
+  useEffect(() => {
+    if (!isOnline) {
+      if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; }
+      return;
+    }
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/connections/incoming", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setIncomingRequest(prev => prev ?? { id: data[0].id, patientName: data[0].patientName, nurseSpec: data[0].nurseSpec });
+        }
+      } catch { }
+    };
+    poll();
+    incomingPollRef.current = setInterval(poll, 3000);
+    return () => { if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; } };
+  }, [isOnline]);
+
+  const handleAcceptConnection = async () => {
+    if (!incomingRequest) return;
+    try {
+      await fetch(`/api/connections/${incomingRequest.id}/accept`, { method: "PUT", credentials: "include" });
+      toast({ title: "✅ Permintaan diterima!", description: `Anda terhubung dengan ${incomingRequest.patientName}` });
+      setIncomingRequest(null);
+      setLocation(`/chat?connectionId=${incomingRequest.id}&name=${encodeURIComponent(incomingRequest.patientName)}&spec=${encodeURIComponent(incomingRequest.nurseSpec)}&type=nurse`);
+    } catch {
+      toast({ title: "Gagal menerima permintaan", variant: "destructive" });
+    }
+  };
+
+  const handleRejectConnection = async () => {
+    if (!incomingRequest) return;
+    try {
+      await fetch(`/api/connections/${incomingRequest.id}/reject`, { method: "PUT", credentials: "include" });
+      toast({ title: "Permintaan ditolak" });
+      setIncomingRequest(null);
+    } catch {
+      toast({ title: "Gagal menolak permintaan", variant: "destructive" });
+    }
+  };
 
   const orderSimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
@@ -648,6 +694,15 @@ export default function NurseDashboard() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 font-sans overflow-hidden">
+
+      {incomingRequest && (
+        <IncomingConnectNotif
+          fromName={incomingRequest.patientName}
+          fromSpec={incomingRequest.nurseSpec}
+          onAccept={handleAcceptConnection}
+          onReject={handleRejectConnection}
+        />
+      )}
 
       {/* ── Header ── */}
       <header className="bg-white dark:bg-gray-900 border-b border-border/50 z-50 shadow-sm flex-shrink-0">

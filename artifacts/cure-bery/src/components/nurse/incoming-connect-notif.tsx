@@ -56,12 +56,11 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
           </div>
 
           <div className="flex-1 min-w-0">
-            {/* Simulasi label */}
             <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-wide mb-0.5">
-              Simulasi — Notif ke {fromName.split(" ")[0]}
+              Permintaan Klien Baru
             </p>
             <p className="text-sm font-bold text-foreground leading-tight">
-              Kamu diajak terhubung! 🔗
+              Ada klien ingin terhubung! 🔗
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               <span className="font-semibold text-foreground">{fromName.split(" ")[0]}</span>
