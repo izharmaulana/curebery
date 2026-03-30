@@ -568,6 +568,7 @@ export default function NurseDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   const updateStatus = useMockableUpdateStatus();
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
@@ -635,6 +636,32 @@ export default function NurseDashboard() {
           </div>
         </div>
       </header>
+
+      {/* ── Welcome Notice ── */}
+      {showWelcome && (
+        <div className="flex-shrink-0 bg-gradient-to-r from-pink-500 via-fuchsia-500 to-violet-500 text-white px-4 py-3 z-40 shadow-md relative overflow-hidden">
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(ellipse_at_top_left,white_0%,transparent_60%)]" />
+          <div className="relative flex items-start justify-between gap-3 max-w-5xl mx-auto">
+            <div className="flex items-start gap-3 flex-1">
+              <span className="text-2xl flex-shrink-0 mt-0.5">💘</span>
+              <div>
+                <p className="text-sm font-bold leading-snug">
+                  kamu bisa terhubung dengan nakes yang lain
+                </p>
+                <p className="text-xs text-white/90 mt-0.5 leading-relaxed italic">
+                  jadi Jangan maluuuu yahhhhhh manaaa tau jodohhhhhhh Cihuyyyyyyyyyyy 🎉
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowWelcome(false)}
+              className="flex-shrink-0 w-6 h-6 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition-colors mt-0.5"
+            >
+              <X className="w-3.5 h-3.5 text-white" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── DESKTOP: icon nav + sidebar + map ── */}
       <div className="hidden md:flex flex-1 overflow-hidden">
