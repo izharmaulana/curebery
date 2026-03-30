@@ -9,17 +9,25 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import {
   LogOut, ShieldPlus, Star, MapPin, Activity, Users,
   List, Map as MapIcon, Phone, Clock, Wifi, WifiOff,
   UserCircle2, Edit2, CheckCircle2, X, Mail, Phone as PhoneIcon,
   Home, Award, DollarSign, Shield, ChevronRight, Camera,
+  Plus, FileText, Stethoscope,
 } from "lucide-react";
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 
 const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
+
+const SUGGESTED_SERVICES = [
+  "Perawatan Luka", "Pemasangan Infus", "Suntikan & Injeksi", "Pemantauan Vital Signs",
+  "Fisioterapi Ringan", "Perawatan Pasca Operasi", "Perawatan Lansia", "Terapi Nebulizer",
+  "Pemasangan Kateter", "Rawat Inap Rumah", "Konsultasi Kesehatan", "Perawatan Bayi",
+];
 
 type ActiveTab = "list" | "map" | "profile";
 
@@ -99,11 +107,22 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
   const [specialization, setSpecialization] = useState("Perawat Umum");
   const [rate, setRate] = useState("150000");
   const [radius, setRadius] = useState("5");
+  const [bio, setBio] = useState("Perawat berpengalaman dengan keahlian khusus dalam perawatan intensif dan pemulihan pasca operasi. Berdedikasi memberikan pelayanan terbaik dan penuh empati kepada setiap klien.");
+  const [services, setServices] = useState<string[]>(["Perawatan Luka", "Pemantauan Vital Signs", "Suntikan & Injeksi"]);
+  const [serviceInput, setServiceInput] = useState("");
 
   const SPECIALIZATIONS = [
     "Perawat Umum", "Perawat ICU", "Perawat Anak", "Perawat Geriatri",
     "Perawat Bedah", "Perawat Jiwa", "Perawat Maternitas",
   ];
+
+  const addService = (name?: string) => {
+    const val = (name ?? serviceInput).trim();
+    if (val && !services.includes(val)) setServices(prev => [...prev, val]);
+    if (!name) setServiceInput("");
+  };
+
+  const removeService = (val: string) => setServices(prev => prev.filter(s => s !== val));
 
   const handleSave = () => {
     setIsEditing(false);
@@ -202,6 +221,17 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
                 <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Alamat</Label>
                 <Input value={address} onChange={e => setAddress(e.target.value)} className="h-9 text-sm" />
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tentang Saya</Label>
+                <Textarea
+                  value={bio}
+                  onChange={e => setBio(e.target.value)}
+                  placeholder="Ceritakan pengalaman dan keahlian Anda..."
+                  className="resize-none min-h-[80px] text-sm border-border/60"
+                  maxLength={400}
+                />
+                <p className="text-xs text-gray-400 text-right">{bio.length}/400 karakter</p>
+              </div>
             </div>
           ) : (
             <>
@@ -223,6 +253,17 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
                   <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
                 </div>
               ))}
+              {bio && (
+                <div className="flex items-start gap-3 px-4 py-3">
+                  <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <FileText className="w-4 h-4 text-teal-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">Tentang Saya</p>
+                    <p className="text-sm text-foreground leading-relaxed mt-0.5">{bio}</p>
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -240,6 +281,45 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
                 <div className="space-y-1">
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Radius Layanan (km)</Label>
                   <Input value={radius} onChange={e => setRadius(e.target.value)} type="number" className="h-9 text-sm" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Layanan Tersedia</Label>
+                  {/* Selected tags */}
+                  {services.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 p-2.5 bg-gray-50 rounded-lg border border-border/40">
+                      {services.map(s => (
+                        <span key={s} className="flex items-center gap-1 text-xs px-2.5 py-1 rounded-full bg-teal-100 text-teal-700 border border-teal-200 font-medium">
+                          {s}
+                          <button type="button" onClick={() => removeService(s)} className="w-3.5 h-3.5 flex items-center justify-center rounded-full hover:bg-teal-200 transition-colors">
+                            <X className="w-2.5 h-2.5" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {/* Quick-select suggestions */}
+                  <div className="flex flex-wrap gap-1">
+                    {SUGGESTED_SERVICES.filter(s => !services.includes(s)).map(s => (
+                      <button key={s} type="button" onClick={() => addService(s)}
+                        className="text-xs px-2 py-0.5 rounded-full bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors">
+                        + {s}
+                      </button>
+                    ))}
+                  </div>
+                  {/* Custom input */}
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Tambah layanan lain..."
+                      value={serviceInput}
+                      onChange={e => setServiceInput(e.target.value)}
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
+                      className="h-8 text-sm flex-1 border-border/60"
+                    />
+                    <Button type="button" variant="outline" size="sm" onClick={() => addService()}
+                      disabled={!serviceInput.trim()} className="h-8 px-2 border-teal-200 text-teal-700 hover:bg-teal-50">
+                      <Plus className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -260,6 +340,21 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
                     <ChevronRight className="w-4 h-4 text-muted-foreground/40 flex-shrink-0" />
                   </div>
                 ))}
+                {services.length > 0 && (
+                  <div className="flex items-start gap-3 px-4 py-3">
+                    <div className="w-8 h-8 rounded-lg bg-teal-50 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Stethoscope className="w-4 h-4 text-teal-600" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide mb-1.5">Layanan Tersedia</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {services.map(s => (
+                          <span key={s} className="text-xs px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 font-medium">{s}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </div>
