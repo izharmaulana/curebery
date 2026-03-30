@@ -69,9 +69,10 @@ interface PatientMapProps {
   userLocation?: { lat: number, lng: number };
   selectedNurseId?: number | null;
   onViewProfile?: (nurse: NursePublicProfile) => void;
+  onConnect?: (nurse: NursePublicProfile) => void;
 }
 
-export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, selectedNurseId, onViewProfile }: PatientMapProps) {
+export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, selectedNurseId, onViewProfile, onConnect }: PatientMapProps) {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -150,6 +151,7 @@ export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, se
                     size="sm"
                     className={`${nurse.isOnline ? 'flex-1' : 'w-full'} bg-primary text-white hover:bg-primary/90 text-xs px-2`}
                     disabled={!nurse.isOnline}
+                    onClick={() => nurse.isOnline && onConnect?.(nurse)}
                   >
                     <Phone className="w-3 h-3 mr-1" />
                     {nurse.isOnline ? 'Hubungkan' : 'Offline'}

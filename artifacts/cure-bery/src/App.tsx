@@ -8,6 +8,7 @@ import PatientDashboard from "@/pages/patient-dashboard";
 import NurseDashboard from "@/pages/nurse-dashboard";
 import NurseRegisterPage from "@/pages/nurse-register";
 import PatientRegisterPage from "@/pages/patient-register";
+import ChatPage from "@/pages/chat";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function Router() {
       <Route path="/nurse-dashboard" component={NurseDashboard} />
       <Route path="/nurse-register" component={NurseRegisterPage} />
       <Route path="/patient-register" component={PatientRegisterPage} />
+      <Route path="/chat" component={ChatPage} />
       <Route component={NotFound} />
     </Switch>
   );

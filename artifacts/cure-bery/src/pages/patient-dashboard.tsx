@@ -6,6 +6,7 @@ import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
 import { PatientMap } from "@/components/map/patient-map";
 import { NurseCard } from "@/components/patient/nurse-card";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
+import { ConnectModal } from "@/components/patient/connect-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List } from "lucide-react";
@@ -19,6 +20,7 @@ export default function PatientDashboard() {
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
+  const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [radius, setRadius] = useState(3);
 
   const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
@@ -77,6 +79,7 @@ export default function PatientDashboard() {
                 nurse={nurse}
                 onClick={(n) => setSelectedNurseId(n.id)}
                 onViewProfile={(n) => setProfileNurse(n)}
+                onConnect={(n) => setConnectNurse(n)}
               />
             </div>
           ))}
@@ -166,6 +169,7 @@ export default function PatientDashboard() {
           userLocation={DEFAULT_PATIENT_LOCATION}
           selectedNurseId={selectedNurseId}
           onViewProfile={(n) => setProfileNurse(n)}
+          onConnect={(n) => setConnectNurse(n)}
         />
       </main>
 
@@ -269,6 +273,7 @@ export default function PatientDashboard() {
               userLocation={DEFAULT_PATIENT_LOCATION}
               selectedNurseId={selectedNurseId}
               onViewProfile={(n) => setProfileNurse(n)}
+              onConnect={(n) => setConnectNurse(n)}
             />
             {/* Floating nurse count badge */}
             <div className="absolute top-3 left-3 z-[1000] bg-white shadow-lg rounded-xl px-3 py-2 flex items-center gap-2 border border-border/50">
@@ -293,6 +298,12 @@ export default function PatientDashboard() {
       open={profileNurse !== null}
       onClose={() => setProfileNurse(null)}
     />
+    {connectNurse && (
+      <ConnectModal
+        nurse={connectNurse}
+        onClose={() => setConnectNurse(null)}
+      />
+    )}
     </>
   );
 }

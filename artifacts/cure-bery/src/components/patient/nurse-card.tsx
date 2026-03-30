@@ -6,9 +6,10 @@ interface NurseCardProps {
   nurse: NursePublicProfile;
   onClick: (nurse: NursePublicProfile) => void;
   onViewProfile: (nurse: NursePublicProfile) => void;
+  onConnect?: (nurse: NursePublicProfile) => void;
 }
 
-export function NurseCard({ nurse, onClick, onViewProfile }: NurseCardProps) {
+export function NurseCard({ nurse, onClick, onViewProfile, onConnect }: NurseCardProps) {
   return (
     <div
       onClick={() => onClick(nurse)}
@@ -65,7 +66,7 @@ export function NurseCard({ nurse, onClick, onViewProfile }: NurseCardProps) {
           size="sm"
           className={`flex-shrink-0 h-7 px-2 text-xs ${nurse.isOnline ? "bg-primary hover:bg-primary/90 text-white shadow-sm" : "bg-gray-100 text-gray-400 cursor-not-allowed"}`}
           disabled={!nurse.isOnline}
-          onClick={e => e.stopPropagation()}
+          onClick={e => { e.stopPropagation(); if (nurse.isOnline && onConnect) onConnect(nurse); }}
         >
           <Phone className="w-3 h-3 mr-1" />
           {nurse.isOnline ? "Hubungkan" : "Offline"}
