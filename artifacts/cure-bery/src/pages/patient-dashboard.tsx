@@ -19,6 +19,9 @@ export default function PatientDashboard() {
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
+  const [radius, setRadius] = useState(3);
+
+  const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
   const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
   const activeUser = (user && user.role === 'patient') ? user : demoUser;
@@ -26,7 +29,7 @@ export default function PatientDashboard() {
   const { data: nurses, isLoading, error } = useMockableNearbyNurses(
     DEFAULT_PATIENT_LOCATION.lat,
     DEFAULT_PATIENT_LOCATION.lng,
-    3
+    radius
   );
 
   const filteredNurses = useMemo(() => {
@@ -126,11 +129,30 @@ export default function PatientDashboard() {
           </div>
         </div>
 
-        <div className="px-6 py-3 flex justify-between items-center border-b border-border/30 bg-white">
-          <h3 className="font-bold text-sm text-foreground">Tenaga Medis Terdekat (Radius 3km)</h3>
-          <span className="text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
-            {filteredNurses.length} Tersedia
-          </span>
+        <div className="px-6 py-3 border-b border-border/30 bg-white space-y-2">
+          <div className="flex justify-between items-center">
+            <h3 className="font-bold text-sm text-foreground">Tenaga Medis Terdekat</h3>
+            <span className="text-xs font-semibold bg-primary/10 text-primary px-2.5 py-1 rounded-full">
+              {filteredNurses.length} Tersedia
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+            <span className="text-[11px] text-muted-foreground mr-1">Radius:</span>
+            {RADIUS_OPTIONS.map(r => (
+              <button
+                key={r}
+                onClick={() => setRadius(r)}
+                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
+                  radius === r
+                    ? "bg-primary text-white shadow-sm"
+                    : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
+                }`}
+              >
+                {r}km
+              </button>
+            ))}
+          </div>
         </div>
 
         <ScrollArea className="flex-1 bg-gray-50/50 p-6 pt-4">
@@ -210,9 +232,25 @@ export default function PatientDashboard() {
                   <SlidersHorizontal className="w-4 h-4" />
                 </Button>
               </div>
-              <div className="mt-2.5 flex items-center justify-between">
-                <p className="text-xs text-muted-foreground font-medium">Radius 3km dari lokasi Anda</p>
-                <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
+              <div className="mt-2.5 flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 flex-1 flex-wrap">
+                  <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+                  <span className="text-[11px] text-muted-foreground">Radius:</span>
+                  {RADIUS_OPTIONS.map(r => (
+                    <button
+                      key={r}
+                      onClick={() => setRadius(r)}
+                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
+                        radius === r
+                          ? "bg-blue-600 text-white shadow-sm"
+                          : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
+                      }`}
+                    >
+                      {r}km
+                    </button>
+                  ))}
+                </div>
+                <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex-shrink-0">
                   {filteredNurses.length} tersedia
                 </span>
               </div>
