@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useThemeStore } from "@/store/theme-store";
 import {
-  LogOut, ShieldPlus, Star, MapPin, Activity, Users,
+  LogOut, ShieldPlus, Star, MapPin, Activity, Users, Moon, Sun,
   List, Map as MapIcon, Phone, Clock, Wifi, WifiOff,
   UserCircle2, Edit2, CheckCircle2, X, Mail, Phone as PhoneIcon,
   Home, Award, DollarSign, Shield, ChevronRight, Camera,
@@ -566,6 +567,7 @@ export default function NurseDashboard() {
   const [, setLocation] = useLocation();
   const { user, logout } = useAuthStore();
   const { toast } = useToast();
+  const { isDark, toggle: toggleTheme } = useThemeStore();
   const [isOnline, setIsOnline] = useState(false);
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
@@ -621,7 +623,13 @@ export default function NurseDashboard() {
               <p className="text-[10px] text-teal-700/70 font-medium">Portal Tenaga Medis</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={toggleTheme}
+              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+            >
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
             <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${isOnline ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-gray-100 border-border/60 text-gray-500"}`}>
               <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
               {isOnline ? "Online" : "Offline"}

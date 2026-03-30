@@ -14,6 +14,8 @@ import GamePage from "@/pages/game";
 import GameQuizPage from "@/pages/game-quiz";
 import GameSelectPage from "@/pages/game-select";
 import NurseConnectedPage from "@/pages/nurse-connected";
+import RiwayatPage from "@/pages/riwayat";
+import LeaderboardPage from "@/pages/leaderboard";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -39,6 +41,8 @@ function Router() {
       <Route path="/game-quiz" component={GameQuizPage} />
       <Route path="/game-select" component={GameSelectPage} />
       <Route path="/nurse-connected" component={NurseConnectedPage} />
+      <Route path="/riwayat" component={RiwayatPage} />
+      <Route path="/leaderboard" component={LeaderboardPage} />
       <Route component={NotFound} />
     </Switch>
   );

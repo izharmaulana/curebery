@@ -28,6 +28,10 @@ Platform layanan perawat online Indonesia.
 - Dashboard perawat: kelola status online/offline
 - Peta interaktif menggunakan react-leaflet + OpenStreetMap (gratis, no API key)
 - Auth dengan zustand state management + localStorage persistence
+- Dark Mode: toggle di header pasien & perawat, CSS variable-based, tersimpan di localStorage
+- Riwayat Layanan (`/riwayat`): histori layanan dengan stats, filter status, pencarian, dan bintang rating
+- Rating Modal: muncul setelah tenaga medis tiba di lokasi tracking (bintang 1-5 + quick tags + komentar)
+- Leaderboard Kuis (`/leaderboard`): podium top 3 + daftar peringkat dengan badge, skor disimpan dari game-quiz
 
 **Demo Accounts:**
 - Pasien: pasien@cureberry.id / password123

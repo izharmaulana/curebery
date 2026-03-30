@@ -1,5 +1,5 @@
 import { useLocation, useSearch } from "wouter";
-import { ArrowLeft, Grid3x3, Brain } from "lucide-react";
+import { ArrowLeft, Grid3x3, Brain, Trophy } from "lucide-react";
 
 export default function GameSelectPage() {
   const [, setLocation] = useLocation();
@@ -75,6 +75,21 @@ export default function GameSelectPage() {
               </div>
             </div>
           </div>
+        </button>
+
+        {/* Leaderboard shortcut */}
+        <button
+          onClick={() => setLocation(`/leaderboard?${qp}`)}
+          className="w-full max-w-sm bg-gradient-to-r from-amber-50 to-yellow-50 rounded-2xl border-2 border-amber-200 hover:border-amber-400 hover:shadow-lg transition-all duration-200 p-4 flex items-center gap-4 active:scale-[0.98]"
+        >
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center flex-shrink-0">
+            <Trophy className="w-6 h-6 text-amber-600" />
+          </div>
+          <div className="flex-1 text-left">
+            <p className="font-bold text-sm text-foreground">Leaderboard 🏆</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Lihat perawat terpintar minggu ini</p>
+          </div>
+          <span className="text-amber-400 text-lg">›</span>
         </button>
 
         <p className="text-xs text-muted-foreground italic text-center">

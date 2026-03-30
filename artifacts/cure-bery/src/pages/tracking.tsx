@@ -5,6 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ArrowLeft, Navigation, CheckCircle2, Clock, Phone, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { RatingModal } from "@/components/patient/rating-modal";
 import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
 
 const NURSE_START = { lat: -6.1900, lng: 106.8300 };
@@ -87,7 +88,9 @@ export default function TrackingPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const nurseName = params.get("name") ?? "Tenaga Medis";
+  const nurseSpec = params.get("spec") ?? "Tenaga Medis";
 
+  const [showRating, setShowRating] = useState(false);
   const [step, setStep] = useState(0);
   const [nursePos, setNursePos] = useState(NURSE_START);
   const [trail, setTrail] = useState<[number, number][]>([[NURSE_START.lat, NURSE_START.lng]]);
@@ -261,12 +264,21 @@ export default function TrackingPage() {
             </div>
             <Button
               className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm"
-              onClick={() => setLocation("/patient-dashboard")}
+              onClick={() => setShowRating(true)}
             >
-              Kembali ke Dashboard
+              Selesai & Beri Nilai ⭐
             </Button>
           </div>
         </div>
+      )}
+
+      {showRating && (
+        <RatingModal
+          nurseName={nurseName}
+          nurseSpec={nurseSpec}
+          onClose={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
+          onSubmit={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
+        />
       )}
     </div>
   );

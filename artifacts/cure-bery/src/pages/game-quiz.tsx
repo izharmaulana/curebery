@@ -332,6 +332,12 @@ export default function GameQuizPage() {
 
   const handleNext = () => {
     if (current + 1 >= questions.length) {
+      const finalScore = scores.you + (results[current]?.correct ? 1 : 0);
+      localStorage.setItem("quiz_leaderboard", JSON.stringify({
+        name: "Kamu",
+        score: Math.round((finalScore / questions.length) * 100),
+        games: 1,
+      }));
       setDone(true);
     } else {
       setCurrent(c => c + 1);
@@ -398,6 +404,13 @@ export default function GameQuizPage() {
             </Button>
             <Button variant="outline" className="flex-1 h-11 rounded-xl font-bold" onClick={backToConnected}>Keluar</Button>
           </div>
+          <Button
+            variant="outline"
+            className="w-full h-11 rounded-xl font-bold border-amber-300 text-amber-700 hover:bg-amber-50"
+            onClick={() => setLocation(`/leaderboard?score=${scores.you}&games=1&opponent=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(opponentSpec)}`)}
+          >
+            🏆 Lihat Leaderboard
+          </Button>
         </div>
       </div>
     );

@@ -79,7 +79,33 @@
   --destructive-foreground: 210 40% 98%;
   
   --radius: 0.75rem;
+}
 
+.dark {
+  --background: 222 47% 6%;
+  --foreground: 210 20% 92%;
+  --border: 215 20% 18%;
+  --input: 215 20% 18%;
+  --ring: 175 65% 40%;
+  --card: 222 47% 9%;
+  --card-foreground: 210 20% 92%;
+  --card-border: 215 20% 18%;
+  --popover: 222 47% 9%;
+  --popover-foreground: 210 20% 92%;
+  --popover-border: 215 20% 18%;
+  --primary: 175 65% 40%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 220 65% 55%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 215 20% 13%;
+  --muted-foreground: 215 16% 60%;
+  --accent: 175 40% 14%;
+  --accent-foreground: 175 65% 70%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 210 40% 98%;
+}
+
+:root {
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --shadow-md: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);

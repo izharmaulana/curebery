@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
+import { useThemeStore } from "@/store/theme-store";
 import { useMockableNearbyNurses } from "@/hooks/use-app-queries";
 import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
 import { PatientMap } from "@/components/map/patient-map";
@@ -9,7 +10,7 @@ import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { ConnectModal } from "@/components/patient/connect-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List } from "lucide-react";
+import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NursePublicProfile } from "@workspace/api-client-react";
 
@@ -41,6 +42,8 @@ export default function PatientDashboard() {
       n.specialization.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [nurses, searchQuery]);
+
+  const { isDark, toggle: toggleTheme } = useThemeStore();
 
   const handleLogout = () => {
     logout();
@@ -104,12 +107,20 @@ export default function PatientDashboard() {
               <p className="text-xs text-muted-foreground font-medium">Dashboard Klien</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">
-            <LogOut className="w-5 h-5" />
-          </Button>
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/riwayat")} className="text-muted-foreground hover:text-primary rounded-full" title="Riwayat Layanan">
+              <ClipboardList className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={toggleTheme} className="text-muted-foreground hover:text-primary rounded-full">
+              {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-full">
+              <LogOut className="w-5 h-5" />
+            </Button>
+          </div>
         </header>
 
-        <div className="px-6 pt-6 pb-4 bg-gradient-to-b from-gray-50 to-white">
+        <div className="px-6 pt-6 pb-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-900/80">
           <h2 className="text-2xl font-display font-bold text-foreground mb-1">
             Halo, {activeUser.name.split(' ')[0]} 👋
           </h2>
@@ -187,9 +198,17 @@ export default function PatientDashboard() {
               <p className="text-[11px] text-muted-foreground">Halo, {activeUser.name.split(' ')[0]} 👋</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleLogout} className="text-muted-foreground hover:text-destructive rounded-full w-8 h-8">
-            <LogOut className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-0.5">
+            <button onClick={() => setLocation("/riwayat")} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              <ClipboardList className="w-4 h-4" />
+            </button>
+            <button onClick={toggleTheme} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
+              {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+            <button onClick={handleLogout} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors">
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
         </header>
 
         {/* Mobile Tab Bar */}
