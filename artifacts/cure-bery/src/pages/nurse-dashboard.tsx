@@ -108,6 +108,8 @@ function NurseListItem({ nurse, isSelected, onClick, onViewProfile, onConnect }:
 function ProfileView({ userName, onLogout }: { userName: string; onLogout: () => void }) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [name, setName] = useState(userName);
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -117,9 +119,26 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
   const [bio, setBio] = useState("");
   const [services, setServices] = useState<string[]>([]);
   const [serviceInput, setServiceInput] = useState("");
-  const [avatarUrl, setAvatarUrl] = useState("https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=120&h=120&fit=crop");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch("/api/nurses/me", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (data.name) setName(data.name);
+        if (data.phone) setPhone(data.phone);
+        if (data.address) setAddress(data.address);
+        if (data.specialization) setSpecialization(data.specialization);
+        if (data.bio) setBio(data.bio);
+        if (data.services?.length) setServices(data.services);
+        if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
+      })
+      .catch(() => {})
+      .finally(() => setIsLoadingProfile(false));
+  }, []);
 
   const compressImage = (file: File): Promise<string> =>
     new Promise(resolve => {
@@ -168,9 +187,23 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
 
   const removeService = (val: string) => setServices(prev => prev.filter(s => s !== val));
 
-  const handleSave = () => {
-    setIsEditing(false);
-    toast({ title: "Profil Diperbarui", description: "Data profil Anda berhasil disimpan." });
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      const res = await fetch("/api/nurses/me/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name, phone, address, specialization, bio, services, avatarUrl }),
+      });
+      if (!res.ok) throw new Error("Gagal menyimpan");
+      setIsEditing(false);
+      toast({ title: "Profil Diperbarui", description: "Data profil Anda berhasil disimpan." });
+    } catch {
+      toast({ title: "Gagal Menyimpan", description: "Terjadi kesalahan. Coba lagi.", variant: "destructive" });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -274,8 +307,8 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
               <button onClick={() => setIsEditing(false)} className="flex items-center gap-1 text-xs text-muted-foreground border border-border/60 rounded-lg px-2.5 py-1.5 hover:bg-gray-50">
                 <X className="w-3.5 h-3.5" /> Batal
               </button>
-              <button onClick={handleSave} className="flex items-center gap-1 text-xs text-white bg-teal-600 rounded-lg px-2.5 py-1.5 hover:bg-teal-700">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Simpan
+              <button onClick={handleSave} disabled={isSaving} className="flex items-center gap-1 text-xs text-white bg-teal-600 rounded-lg px-2.5 py-1.5 hover:bg-teal-700 disabled:opacity-60">
+                <CheckCircle2 className="w-3.5 h-3.5" /> {isSaving ? "Menyimpan..." : "Simpan"}
               </button>
             </div>
           ) : (

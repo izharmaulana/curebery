@@ -62,6 +62,93 @@ router.get("/nearby", async (req, res) => {
   }
 });
 
+router.get("/me", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+
+    const rows = await db
+      .select({
+        id: nursesTable.id,
+        strNumber: nursesTable.strNumber,
+        specialization: nursesTable.specialization,
+        isOnline: nursesTable.isOnline,
+        rating: nursesTable.rating,
+        totalPatients: nursesTable.totalPatients,
+        yearsExperience: nursesTable.yearsExperience,
+        phone: nursesTable.phone,
+        address: nursesTable.address,
+        bio: nursesTable.bio,
+        services: nursesTable.services,
+        avatarUrl: nursesTable.avatarUrl,
+        name: usersTable.name,
+      })
+      .from(nursesTable)
+      .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id))
+      .where(eq(nursesTable.userId, session.userId))
+      .limit(1);
+
+    if (rows.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Profil perawat tidak ditemukan" });
+      return;
+    }
+
+    const nurse = rows[0];
+    res.json({
+      ...nurse,
+      services: nurse.services ? JSON.parse(nurse.services) : [],
+    });
+  } catch (err) {
+    req.log.error({ err }, "Get nurse profile error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Gagal memuat profil" });
+  }
+});
+
+router.put("/me/profile", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+
+    const { name, phone, address, specialization, bio, services, avatarUrl } = req.body;
+
+    const nurses = await db.select().from(nursesTable).where(eq(nursesTable.userId, session.userId)).limit(1);
+    if (nurses.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Profil perawat tidak ditemukan" });
+      return;
+    }
+
+    await db.update(nursesTable)
+      .set({
+        specialization: specialization || nurses[0].specialization,
+        phone: phone || null,
+        address: address || null,
+        bio: bio || null,
+        services: services ? JSON.stringify(services) : null,
+        avatarUrl: avatarUrl || nurses[0].avatarUrl || null,
+        updatedAt: new Date(),
+      })
+      .where(eq(nursesTable.userId, session.userId));
+
+    if (name) {
+      await db.update(usersTable)
+        .set({ name })
+        .where(eq(usersTable.id, session.userId));
+    }
+
+    req.log.info({ userId: session.userId }, "Nurse profile updated");
+    res.json({ success: true, message: "Profil berhasil disimpan" });
+  } catch (err) {
+    req.log.error({ err }, "Update nurse profile error");
+    res.status(400).json({ error: "INVALID_INPUT", message: "Gagal menyimpan profil" });
+  }
+});
+
 router.put("/me/location", async (req, res) => {
   try {
     const session = req.session as any;

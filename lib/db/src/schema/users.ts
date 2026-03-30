@@ -23,6 +23,10 @@ export const nursesTable = pgTable("nurses", {
   avatarUrl: text("avatar_url"),
   totalPatients: serial("total_patients"),
   yearsExperience: serial("years_experience"),
+  phone: text("phone"),
+  address: text("address"),
+  bio: text("bio"),
+  services: text("services"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
