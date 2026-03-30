@@ -5,10 +5,12 @@ import { useMockableNearbyNurses } from "@/hooks/use-app-queries";
 import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
 import { PatientMap } from "@/components/map/patient-map";
 import { NurseCard } from "@/components/patient/nurse-card";
+import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { NursePublicProfile } from "@workspace/api-client-react";
 
 export default function PatientDashboard() {
   const [, setLocation] = useLocation();
@@ -16,6 +18,7 @@ export default function PatientDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [mobileTab, setMobileTab] = useState<"list" | "map">("list");
+  const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
 
   const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
   const activeUser = (user && user.role === 'patient') ? user : demoUser;
@@ -70,6 +73,7 @@ export default function PatientDashboard() {
               <NurseCard
                 nurse={nurse}
                 onClick={(n) => setSelectedNurseId(n.id)}
+                onViewProfile={(n) => setProfileNurse(n)}
               />
             </div>
           ))}
@@ -79,6 +83,7 @@ export default function PatientDashboard() {
   );
 
   return (
+    <>
     <div className="flex h-screen w-full bg-gray-50 overflow-hidden font-sans">
 
       {/* ── DESKTOP: Sidebar + Map side by side ── */}
@@ -242,5 +247,12 @@ export default function PatientDashboard() {
         )}
       </div>
     </div>
+
+    <NurseProfileSheet
+      nurse={profileNurse}
+      open={profileNurse !== null}
+      onClose={() => setProfileNurse(null)}
+    />
+    </>
   );
 }

@@ -3,15 +3,16 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { MapPin, Star, Activity, CheckCircle2, Phone } from "lucide-react";
+import { MapPin, Star, Activity, CheckCircle2, Phone, UserCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface NurseCardProps {
   nurse: NursePublicProfile;
   onClick: (nurse: NursePublicProfile) => void;
+  onViewProfile: (nurse: NursePublicProfile) => void;
 }
 
-export function NurseCard({ nurse, onClick }: NurseCardProps) {
+export function NurseCard({ nurse, onClick, onViewProfile }: NurseCardProps) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -66,19 +67,34 @@ export function NurseCard({ nurse, onClick }: NurseCardProps) {
           </div>
         </div>
         
-        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between">
-          <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5">
-            <CheckCircle2 className="w-3.5 h-3.5 text-primary" />
-            {nurse.strNumber}
+        <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-between gap-2">
+          <div className="text-xs text-muted-foreground font-mono flex items-center gap-1.5 truncate">
+            <CheckCircle2 className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+            <span className="truncate">{nurse.strNumber}</span>
           </div>
-          <Button 
-            size="sm" 
-            variant={nurse.isOnline ? "default" : "outline"}
-            className={nurse.isOnline ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20" : ""}
-          >
-            <Phone className="w-4 h-4 mr-1.5" />
-            Hubungi
-          </Button>
+          <div className="flex gap-2 flex-shrink-0">
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-300"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewProfile(nurse);
+              }}
+            >
+              <UserCircle className="w-4 h-4 mr-1.5" />
+              Profil
+            </Button>
+            <Button 
+              size="sm" 
+              variant={nurse.isOnline ? "default" : "outline"}
+              className={nurse.isOnline ? "bg-primary hover:bg-primary/90 text-primary-foreground shadow-md shadow-primary/20" : ""}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Phone className="w-4 h-4 mr-1.5" />
+              Hubungi
+            </Button>
+          </div>
         </div>
       </Card>
     </motion.div>
