@@ -105,7 +105,7 @@ function NurseListItem({ nurse, isSelected, onClick, onViewProfile, onConnect }:
 }
 
 /* ─── Profile View ─── */
-function ProfileView({ userName, onLogout }: { userName: string; onLogout: () => void }) {
+function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { userName: string; onLogout: () => void; nurseRating: number; nurseTotalPatients: number }) {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -286,8 +286,8 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
         {/* Stats row */}
         <div className="grid grid-cols-3 gap-2">
           {[
-            { icon: Star, val: "Baru", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
-            { icon: Users, val: "0", label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
+            { icon: Star, val: nurseRating > 0 ? String(nurseRating) : "Baru", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
+            { icon: Users, val: String(nurseTotalPatients), label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
             { icon: Award, val: "3 Thn", label: "Pengalaman", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
           ].map(s => (
             <div key={s.label} className={`${s.bg} ${s.border} border rounded-xl p-2.5 text-center`}>
@@ -501,7 +501,7 @@ function ProfileView({ userName, onLogout }: { userName: string; onLogout: () =>
 function SidebarListView({
   isOnline, onStatusChange, updatePending, onlineCount, offlineCount,
   displayNurses, filterOnlineOnly, setFilterOnlineOnly, selectedNurseId, setSelectedNurseId,
-  onViewProfile, onConnect,
+  onViewProfile, onConnect, nurseRating, nurseTotalPatients,
 }: {
   isOnline: boolean;
   onStatusChange: (v: boolean) => void;
@@ -515,6 +515,8 @@ function SidebarListView({
   setSelectedNurseId: (v: number | null | ((p: number | null) => number | null)) => void;
   onViewProfile?: (n: NursePublicProfile) => void;
   onConnect?: (n: NursePublicProfile) => void;
+  nurseRating: number;
+  nurseTotalPatients: number;
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -533,8 +535,8 @@ function SidebarListView({
 
         <div className="grid grid-cols-3 gap-2 mt-3">
           {[
-            { val: "4.8 ★", label: "Rating", cls: "text-amber-500" },
-            { val: "124", label: "Layanan", cls: "text-blue-600" },
+            { val: nurseRating > 0 ? `${nurseRating} ★` : "Baru", label: "Rating", cls: "text-amber-500" },
+            { val: String(nurseTotalPatients), label: "Layanan", cls: "text-blue-600" },
             { val: `${isOnline ? "🟢" : "⚫"} ${isOnline ? "Live" : "Paused"}`, label: "Status", cls: "text-teal-600" },
           ].map(s => (
             <div key={s.label} className="bg-gray-50 rounded-lg p-2 text-center border border-border/40">
@@ -615,6 +617,8 @@ export default function NurseDashboard() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [incomingRequest, setIncomingRequest] = useState<{ id: number; patientName: string; nurseSpec: string } | null>(null);
   const incomingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [nurseRating, setNurseRating] = useState<number>(0);
+  const [nurseTotalPatients, setNurseTotalPatients] = useState<number>(0);
 
   const updateStatus = useMockableUpdateStatus();
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
@@ -629,6 +633,17 @@ export default function NurseDashboard() {
 
   useEffect(() => {
     requestNotifPermission();
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/nurses/me", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (!data) return;
+        if (typeof data.rating === "number") setNurseRating(data.rating);
+        if (typeof data.totalPatients === "number") setNurseTotalPatients(data.totalPatients);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -843,10 +858,12 @@ export default function NurseDashboard() {
               setSelectedNurseId={setSelectedNurseId}
               onViewProfile={setProfileNurse}
               onConnect={setConnectNurse}
+              nurseRating={nurseRating}
+              nurseTotalPatients={nurseTotalPatients}
             />
           )}
           {activeTab === "profile" && (
-            <ProfileView userName={activeUser.name} onLogout={handleLogout} />
+            <ProfileView userName={activeUser.name} onLogout={handleLogout} nurseRating={nurseRating} nurseTotalPatients={nurseTotalPatients} />
           )}
         </aside>
 
@@ -890,6 +907,8 @@ export default function NurseDashboard() {
                 setSelectedNurseId={setSelectedNurseId}
                 onViewProfile={setProfileNurse}
                 onConnect={setConnectNurse}
+                nurseRating={nurseRating}
+                nurseTotalPatients={nurseTotalPatients}
               />
             </div>
           )}
@@ -910,7 +929,7 @@ export default function NurseDashboard() {
           )}
           {activeTab === "profile" && (
             <div className="h-full bg-gray-50 overflow-hidden">
-              <ProfileView userName={activeUser.name} onLogout={handleLogout} />
+              <ProfileView userName={activeUser.name} onLogout={handleLogout} nurseRating={nurseRating} nurseTotalPatients={nurseTotalPatients} />
             </div>
           )}
         </div>
