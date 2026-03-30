@@ -1,5 +1,5 @@
 import { NursePublicProfile } from "@workspace/api-client-react";
-import { Sheet, SheetContent, SheetHeader } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -91,6 +91,7 @@ export function NurseProfileSheet({ nurse, open, onClose }: NurseProfileSheetPro
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
         <SheetHeader className="p-0 space-y-0">
+          <SheetTitle className="sr-only">Profil Tenaga Medis</SheetTitle>
           {/* Hero banner */}
           <div className="relative bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-700 pt-10 pb-6 px-6">
             <button

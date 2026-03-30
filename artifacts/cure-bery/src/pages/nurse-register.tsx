@@ -6,13 +6,15 @@ import { registerNurse } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { 
   HeartPulse, ArrowLeft, Shield, CheckCircle2, 
   User, Mail, Lock, FileText, Stethoscope, 
-  Phone, MapPin, Briefcase, Eye, EyeOff, Loader2
+  Phone, MapPin, Briefcase, Eye, EyeOff, Loader2,
+  Plus, X, BookOpen, ListChecks
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -27,6 +29,21 @@ const SPECIALIZATIONS = [
   "Perawat Jiwa (Psikiatri)",
   "Perawat Bedah",
   "Perawat Homecare",
+];
+
+const SUGGESTED_SERVICES = [
+  "Perawatan Luka",
+  "Pemasangan Infus",
+  "Injeksi",
+  "Pengukuran Vital Sign",
+  "Nebulisasi",
+  "Pemasangan NGT",
+  "Fisioterapi Ringan",
+  "Manajemen Obat",
+  "Konsultasi Kesehatan",
+  "Perawatan Post-Operasi",
+  "Pendampingan Lansia",
+  "Perawatan Bayi",
 ];
 
 const STEPS = [
@@ -54,15 +71,30 @@ export default function NurseRegisterPage() {
     strNumber: "",
     specialization: "",
     yearsExperience: "",
+    bio: "",
     password: "",
     confirmPassword: "",
   });
+  const [services, setServices] = useState<string[]>([]);
+  const [serviceInput, setServiceInput] = useState("");
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const update = (field: string, value: string) => {
     setForm(prev => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors(prev => ({ ...prev, [field]: "" }));
+  };
+
+  const addService = (name?: string) => {
+    const val = (name ?? serviceInput).trim();
+    if (val && !services.includes(val)) {
+      setServices(prev => [...prev, val]);
+    }
+    if (!name) setServiceInput("");
+  };
+
+  const removeService = (name: string) => {
+    setServices(prev => prev.filter(s => s !== name));
   };
 
   const validateStep = (s: number) => {
@@ -390,6 +422,89 @@ export default function NurseRegisterPage() {
                           className="pl-10 h-11 border-border/60"
                         />
                       </div>
+                    </div>
+
+                    {/* Tentang */}
+                    <div className="space-y-2">
+                      <Label className="font-medium text-gray-700 flex items-center gap-2">
+                        <BookOpen className="w-4 h-4 text-teal-600" />
+                        Tentang Saya <span className="text-gray-400 font-normal">(opsional)</span>
+                      </Label>
+                      <Textarea
+                        placeholder="Ceritakan pengalaman, keahlian, dan pendekatan perawatan Anda kepada klien..."
+                        value={form.bio}
+                        onChange={e => update("bio", e.target.value)}
+                        className="border-border/60 resize-none min-h-[90px] text-sm"
+                        maxLength={400}
+                      />
+                      <p className="text-xs text-gray-400 text-right">{form.bio.length}/400 karakter</p>
+                    </div>
+
+                    {/* Layanan Tersedia */}
+                    <div className="space-y-3">
+                      <Label className="font-medium text-gray-700 flex items-center gap-2">
+                        <ListChecks className="w-4 h-4 text-teal-600" />
+                        Layanan Tersedia <span className="text-gray-400 font-normal">(opsional)</span>
+                      </Label>
+
+                      {/* Saran cepat */}
+                      <div>
+                        <p className="text-xs text-gray-400 mb-2">Pilih dari saran cepat:</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {SUGGESTED_SERVICES.filter(s => !services.includes(s)).map(s => (
+                            <button
+                              key={s}
+                              type="button"
+                              onClick={() => addService(s)}
+                              className="text-xs px-2.5 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors"
+                            >
+                              + {s}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Input tambah manual */}
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="Atau ketik layanan lain..."
+                          value={serviceInput}
+                          onChange={e => setServiceInput(e.target.value)}
+                          onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); addService(); } }}
+                          className="h-10 border-border/60 text-sm flex-1"
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => addService()}
+                          className="h-10 px-3 border-teal-200 text-teal-700 hover:bg-teal-50"
+                          disabled={!serviceInput.trim()}
+                        >
+                          <Plus className="w-4 h-4" />
+                        </Button>
+                      </div>
+
+                      {/* Tag layanan yang dipilih */}
+                      {services.length > 0 && (
+                        <div className="flex flex-wrap gap-2 p-3 bg-gray-50 rounded-xl border border-border/40">
+                          {services.map(s => (
+                            <span
+                              key={s}
+                              className="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-teal-600 text-white font-medium"
+                            >
+                              {s}
+                              <button
+                                type="button"
+                                onClick={() => removeService(s)}
+                                className="hover:bg-teal-700 rounded-full p-0.5 transition-colors"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </motion.div>
