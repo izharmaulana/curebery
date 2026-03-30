@@ -20,6 +20,7 @@ router.get("/nearby", async (req, res) => {
   try {
     const params = GetNearbyNursesQueryParams.parse(req.query);
     const radiusKm = params.radius ?? 10;
+    const currentUserId = (req.session as any)?.userId ?? null;
 
   const rows = await db
     .select({
@@ -41,6 +42,7 @@ router.get("/nearby", async (req, res) => {
     .where(eq(nursesTable.isOnline, true));
 
     const nursesWithDistance = rows
+      .filter(nurse => nurse.userId !== currentUserId)
       .map(nurse => {
         if (nurse.lat == null || nurse.lng == null) return null;
 
