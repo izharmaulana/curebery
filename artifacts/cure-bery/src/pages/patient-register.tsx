@@ -8,7 +8,6 @@ import { Label } from "@/components/ui/label";
 import { ArrowLeft, ArrowRight, UserCircle2, Shield, CheckCircle2, Eye, EyeOff, HeartPulse, CalendarDays, Phone, MapPin, User } from "lucide-react";
 
 const GENDERS = ["Laki-laki", "Perempuan"] as const;
-const BLOOD_TYPES = ["A", "B", "AB", "O"] as const;
 
 function PasswordStrength({ password }: { password: string }) {
   const checks = [
@@ -52,7 +51,6 @@ export default function PatientRegisterPage() {
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState<string>("");
   const [address, setAddress] = useState("");
-  const [bloodType, setBloodType] = useState<string>("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -90,7 +88,7 @@ export default function PatientRegisterPage() {
       const res = await fetch("/api/auth/register/patient", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, phone, birthDate, gender, address, bloodType }),
+        body: JSON.stringify({ name, email, password, phone, birthDate, gender, address }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -283,23 +281,6 @@ export default function PatientRegisterPage() {
                     </div>
                   </div>
 
-                  {/* Golongan Darah (optional) */}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm font-semibold text-foreground">Golongan Darah <span className="text-muted-foreground font-normal">(opsional)</span></Label>
-                    <div className="flex gap-2">
-                      {BLOOD_TYPES.map(bt => (
-                        <button
-                          key={bt}
-                          type="button"
-                          onClick={() => setBloodType(bt === bloodType ? "" : bt)}
-                          className={`flex-1 h-10 text-sm font-bold rounded-lg border transition-all ${bloodType === bt ? "bg-red-500 text-white border-red-500 shadow-sm" : "bg-white border-border/60 text-muted-foreground hover:border-red-300 hover:text-red-500"}`}
-                        >
-                          {bt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   {/* Alamat (optional) */}
                   <div className="space-y-1.5">
                     <Label className="text-sm font-semibold text-foreground">Alamat <span className="text-muted-foreground font-normal">(opsional)</span></Label>
@@ -367,7 +348,7 @@ export default function PatientRegisterPage() {
                     {gender && (
                       <div className="flex items-center gap-2 text-sm text-blue-900">
                         <span className="w-3.5 h-3.5 text-blue-500 flex-shrink-0 text-center">⚥</span>
-                        <span>{gender}{bloodType ? ` · Gol. Darah ${bloodType}` : ""}</span>
+                        <span>{gender}</span>
                       </div>
                     )}
                   </div>
