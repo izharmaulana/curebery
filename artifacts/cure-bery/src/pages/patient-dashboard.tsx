@@ -143,6 +143,7 @@ export default function PatientDashboard() {
           nurses={filteredNurses}
           userLocation={DEFAULT_PATIENT_LOCATION}
           selectedNurseId={selectedNurseId}
+          onViewProfile={(n) => setProfileNurse(n)}
         />
       </main>
 
@@ -229,6 +230,7 @@ export default function PatientDashboard() {
               nurses={filteredNurses}
               userLocation={DEFAULT_PATIENT_LOCATION}
               selectedNurseId={selectedNurseId}
+              onViewProfile={(n) => setProfileNurse(n)}
             />
             {/* Floating nurse count badge */}
             <div className="absolute top-3 left-3 z-[1000] bg-white shadow-lg rounded-xl px-3 py-2 flex items-center gap-2 border border-border/50">

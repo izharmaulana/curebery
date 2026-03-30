@@ -4,7 +4,7 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { NursePublicProfile } from '@workspace/api-client-react';
 import { DEFAULT_PATIENT_LOCATION } from '@/lib/dummy-data';
-import { MapPin, Star, Phone } from 'lucide-react';
+import { Star, Phone, UserCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -68,9 +68,10 @@ interface PatientMapProps {
   nurses: NursePublicProfile[];
   userLocation?: { lat: number, lng: number };
   selectedNurseId?: number | null;
+  onViewProfile?: (nurse: NursePublicProfile) => void;
 }
 
-export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, selectedNurseId }: PatientMapProps) {
+export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, selectedNurseId, onViewProfile }: PatientMapProps) {
   return (
     <div className="h-full w-full relative z-0">
       <MapContainer 
@@ -134,9 +135,26 @@ export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, se
                   </div>
                 </div>
                 
-                <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
-                  <Phone className="w-3 h-3 mr-2" /> Hubungkan
-                </Button>
+                <div className={`flex gap-1.5 ${nurse.isOnline ? '' : ''}`}>
+                  {nurse.isOnline && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="flex-1 border-teal-200 text-teal-700 hover:bg-teal-50 text-xs px-2"
+                      onClick={() => onViewProfile?.(nurse)}
+                    >
+                      <UserCircle className="w-3 h-3 mr-1" /> Profil
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    className={`${nurse.isOnline ? 'flex-1' : 'w-full'} bg-primary text-white hover:bg-primary/90 text-xs px-2`}
+                    disabled={!nurse.isOnline}
+                  >
+                    <Phone className="w-3 h-3 mr-1" />
+                    {nurse.isOnline ? 'Hubungkan' : 'Offline'}
+                  </Button>
+                </div>
               </div>
             </Popup>
           </Marker>
