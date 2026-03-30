@@ -9,8 +9,8 @@ const router: IRouter = Router();
 const hashPassword = (password: string) =>
   crypto.createHash("sha256").update(password + "curebery_salt_v1").digest("hex");
 
-const DEFAULT_LAT = 0;
-const DEFAULT_LNG = 0;
+const DEFAULT_LAT = -6.2088;
+const DEFAULT_LNG = 106.8456;
 
 router.post("/register/patient", async (req, res) => {
   try {
@@ -27,21 +27,17 @@ router.post("/register/patient", async (req, res) => {
       return;
     }
 
-    const [newUser] = await db.insert(nursesTable).values({
-        userId: newUser.id,
-        strNumber: body.strNumber,
-        specialization: body.specialization,
-        isOnline: false,
-        rating: 4.5,
-        lat: body.lat ?? 0,
-        lng: body.lng ?? 0,
-        totalPatients: 0,
-        yearsExperience: body.yearsExperience ?? 0,
-      address: body.address,
-        phone: body.phone,
-        about: body.about,
-      });
+    const [newUser] = await db.insert(usersTable).values({
+      email,
+      passwordHash: hashPassword(password),
+      name,
+      role: "patient",
+    }).returning();
 
+    (req.session as any).userId = newUser.id;
+    (req.session as any).role = newUser.role;
+
+    req.log.info({ userId: newUser.id, email }, "Patient registered");
 
     res.status(201).json({
       success: true,
