@@ -90,7 +90,7 @@ export default function AuthPage() {
                   <Input type="password" value={patientPassword} onChange={e => setPatientPassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={patientLogin.isPending}>
-                  {patientLogin.isPending ? "Memproses..." : "Klien"}
+                  {patientLogin.isPending ? "Memproses..." : "Masuk"}
                 </Button>
                 <div className="mt-3 pt-3 border-t border-blue-100 text-center">
                   <Button
@@ -114,7 +114,7 @@ export default function AuthPage() {
                   <Input type="password" value={nursePassword} onChange={e => setNursePassword(e.target.value)} required />
                 </div>
                 <Button type="submit" className="w-full bg-teal-600 hover:bg-teal-700" disabled={nurseLogin.isPending}>
-                  {nurseLogin.isPending ? "Memproses..." : "Tenaga Medis"}
+                  {nurseLogin.isPending ? "Memproses..." : "Masuk"}
                 </Button>
                 <div className="mt-3 pt-3 border-t border-teal-100 text-center">
                   <Button
@@ -123,7 +123,7 @@ export default function AuthPage() {
                     onClick={() => setLocation("/nurse-register")}
                     className="w-full border-teal-200 text-teal-700 hover:bg-teal-50"
                   >
-                    <UserPlus className="w-4 h-4 mr-2" /> Daftar sebagai Perawat
+                    <UserPlus className="w-4 h-4 mr-2" /> Daftar sebagai Tenaga Medis
                   </Button>
                 </div>
               </form>
@@ -277,7 +277,7 @@ export default function AuthPage() {
                 className="w-full h-11 rounded-xl border-teal-200 text-teal-700 hover:bg-teal-50 hover:border-teal-400 transition-all font-medium"
               >
                 <UserPlus className="w-4 h-4 mr-2" />
-                Daftar sebagai Perawat
+                Daftar sebagai Tenaga Medis
               </Button>
             </div>
           </CardContent>
