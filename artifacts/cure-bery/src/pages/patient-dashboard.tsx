@@ -3,16 +3,16 @@ import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useThemeStore } from "@/store/theme-store";
 import { useMockableNearbyNurses } from "@/hooks/use-app-queries";
-import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
 import { PatientMap } from "@/components/map/patient-map";
 import { NurseCard } from "@/components/patient/nurse-card";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { ConnectModal } from "@/components/patient/connect-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun } from "lucide-react";
+import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun, Navigation } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NursePublicProfile } from "@workspace/api-client-react";
+import { useGeolocation } from "@/hooks/use-geolocation";
 
 export default function PatientDashboard() {
   const [, setLocation] = useLocation();
@@ -29,9 +29,11 @@ export default function PatientDashboard() {
   const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
   const activeUser = (user && user.role === 'patient') ? user : demoUser;
 
+  const { location: gpsLocation, isGpsActive, loading: gpsLoading } = useGeolocation();
+
   const { data: nurses, isLoading, error } = useMockableNearbyNurses(
-    DEFAULT_PATIENT_LOCATION.lat,
-    DEFAULT_PATIENT_LOCATION.lng,
+    gpsLocation.lat,
+    gpsLocation.lng,
     radius
   );
 
@@ -177,11 +179,19 @@ export default function PatientDashboard() {
       <main className="hidden md:block flex-1 relative bg-gray-100">
         <PatientMap
           nurses={filteredNurses}
-          userLocation={DEFAULT_PATIENT_LOCATION}
+          userLocation={gpsLocation}
           selectedNurseId={selectedNurseId}
           onViewProfile={(n) => setProfileNurse(n)}
           onConnect={(n) => setConnectNurse(n)}
         />
+        <div className={`absolute top-3 left-3 z-[500] flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm border transition-all ${
+          gpsLoading ? "bg-white/80 border-gray-200 text-gray-500" :
+          isGpsActive ? "bg-white/90 border-emerald-200 text-emerald-700" :
+          "bg-white/90 border-amber-200 text-amber-700"
+        }`}>
+          <Navigation className={`w-3 h-3 ${gpsLoading ? "animate-pulse" : ""}`} />
+          {gpsLoading ? "Mencari GPS..." : isGpsActive ? "GPS Aktif" : "GPS: Jakarta (default)"}
+        </div>
       </main>
 
       {/* ── MOBILE: Full screen with tab switcher ── */}
@@ -289,13 +299,21 @@ export default function PatientDashboard() {
           <div className="flex-1 relative">
             <PatientMap
               nurses={filteredNurses}
-              userLocation={DEFAULT_PATIENT_LOCATION}
+              userLocation={gpsLocation}
               selectedNurseId={selectedNurseId}
               onViewProfile={(n) => setProfileNurse(n)}
               onConnect={(n) => setConnectNurse(n)}
             />
+            <div className={`absolute top-3 left-3 z-[500] flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm border transition-all ${
+              gpsLoading ? "bg-white/80 border-gray-200 text-gray-500" :
+              isGpsActive ? "bg-white/90 border-emerald-200 text-emerald-700" :
+              "bg-white/90 border-amber-200 text-amber-700"
+            }`}>
+              <Navigation className={`w-3 h-3 ${gpsLoading ? "animate-pulse" : ""}`} />
+              {gpsLoading ? "Mencari GPS..." : isGpsActive ? "GPS Aktif" : "Default"}
+            </div>
             {/* Floating nurse count badge */}
-            <div className="absolute top-3 left-3 z-[1000] bg-white shadow-lg rounded-xl px-3 py-2 flex items-center gap-2 border border-border/50">
+            <div className="absolute top-12 left-3 z-[500] bg-white shadow-lg rounded-xl px-3 py-2 flex items-center gap-2 border border-border/50">
               <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
               <span className="text-xs font-bold text-foreground">{filteredNurses.filter(n => n.isOnline).length} tenaga medis online</span>
             </div>

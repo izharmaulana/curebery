@@ -7,6 +7,7 @@ import {
   ArrowLeft, Send,
   CheckCheck, ShoppingBag, X, Info, Gamepad2,
 } from "lucide-react";
+import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
 interface Message {
   id: number;
@@ -84,9 +85,18 @@ export default function ChatPage() {
     }, 1200);
   };
 
+  useEffect(() => {
+    if (!isNurseMode) requestNotifPermission();
+  }, []);
+
   const handleOrder = () => {
     setShowOrderConfirm(false);
     setOrdered(true);
+    showNotification({
+      title: "✅ Order Berhasil Dikirim!",
+      body: `${nurseName} akan segera menuju lokasi Anda`,
+      tag: "order-sent",
+    });
     setTimeout(() => {
       setLocation(`/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`);
     }, 800);

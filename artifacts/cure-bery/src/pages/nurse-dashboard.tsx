@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useMockableUpdateStatus, useMockableNearbyNurses } from "@/hooks/use-app-queries";
@@ -22,8 +22,8 @@ import {
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { NurseConnectModal } from "@/components/nurse/nurse-connect-modal";
-
-const NURSE_LOCATION = { lat: -6.2000, lng: 106.8400 };
+import { useGeolocation } from "@/hooks/use-geolocation";
+import { requestNotifPermission, notifyNurseNewOrder } from "@/lib/notifications";
 
 const SUGGESTED_SERVICES = [
   "Perawatan Luka", "Pemasangan Infus", "Suntikan & Injeksi", "Pemantauan Vital Signs",
@@ -580,10 +580,43 @@ export default function NurseDashboard() {
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
   const activeUser = (user && user.role === "nurse") ? user : demoNurse;
 
-  const { data: allNurses = [] } = useMockableNearbyNurses(NURSE_LOCATION.lat, NURSE_LOCATION.lng, 5);
+  const { location: gpsLocation, isGpsActive } = useGeolocation();
+
+  const { data: allNurses = [] } = useMockableNearbyNurses(gpsLocation.lat, gpsLocation.lng, 5);
   const displayNurses = useMemo(() => filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses, [allNurses, filterOnlineOnly]);
   const onlineCount = allNurses.filter(n => n.isOnline).length;
   const offlineCount = allNurses.length - onlineCount;
+
+  useEffect(() => {
+    requestNotifPermission();
+  }, []);
+
+  const orderSimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!isOnline) {
+      if (orderSimTimerRef.current) clearTimeout(orderSimTimerRef.current);
+      return;
+    }
+    const PATIENT_NAMES = ["Budi Santoso", "Sari Dewi", "Ahmad Fauzi", "Rina Wulandari", "Hendra Kurniawan"];
+    const SERVICES = ["perawatan luka", "pemasangan infus", "pemantauan vital signs", "suntikan & injeksi", "perawatan pasca operasi"];
+    const scheduleNext = () => {
+      const delay = 30000 + Math.random() * 60000;
+      orderSimTimerRef.current = setTimeout(() => {
+        const name = PATIENT_NAMES[Math.floor(Math.random() * PATIENT_NAMES.length)];
+        const service = SERVICES[Math.floor(Math.random() * SERVICES.length)];
+        notifyNurseNewOrder(name, service, () => setActiveTab("list"));
+        toast({
+          title: "🔔 Order Baru Masuk!",
+          description: `${name} membutuhkan ${service}`,
+        });
+        scheduleNext();
+      }, delay);
+    };
+    scheduleNext();
+    return () => {
+      if (orderSimTimerRef.current) clearTimeout(orderSimTimerRef.current);
+    };
+  }, [isOnline]);
 
   const handleLogout = () => { logout(); setLocation("/"); };
   const handleStatusChange = async (checked: boolean) => {
@@ -722,7 +755,11 @@ export default function NurseDashboard() {
 
         {/* Map */}
         <main className="flex-1 relative">
-          <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
+          <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
+          <div className={`absolute top-3 left-3 z-[500] flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm border ${isGpsActive ? "bg-white/90 border-emerald-200 text-emerald-700" : "bg-white/90 border-amber-200 text-amber-700"}`}>
+            <MapPin className="w-3 h-3" />
+            {isGpsActive ? "GPS Aktif" : "GPS: Default"}
+          </div>
           {!isOnline && (
             <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white">
               <div className="w-16 h-16 bg-white/10 rounded-full flex items-center justify-center mb-4 border border-white/20">
@@ -761,7 +798,7 @@ export default function NurseDashboard() {
           )}
           {activeTab === "map" && (
             <div className="h-full relative">
-              <NurseMap nurses={displayNurses} location={NURSE_LOCATION} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
+              <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
               {!isOnline && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
                   <WifiOff className="w-10 h-10 mb-3 opacity-80" />
