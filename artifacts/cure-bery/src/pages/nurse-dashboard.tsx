@@ -424,7 +424,7 @@ function SidebarListView({
       {/* List header */}
       <div className="px-4 py-3 flex items-center justify-between border-b border-border/30">
         <div>
-          <h3 className="font-bold text-sm text-foreground">Perawat di Area Ini</h3>
+          <h3 className="font-bold text-sm text-foreground">Tenaga Medis di Area Ini</h3>
           <p className="text-[11px] text-muted-foreground mt-0.5">
             <span className="text-emerald-600 font-semibold">{onlineCount} online</span>{" · "}
             <span className="text-gray-500">{offlineCount} offline</span>
@@ -508,12 +508,12 @@ export default function NurseDashboard() {
   };
 
   const DESKTOP_TABS = [
-    { id: "list" as ActiveTab, icon: List, label: "Perawat" },
+    { id: "list" as ActiveTab, icon: List, label: "Tenaga Medis" },
     { id: "profile" as ActiveTab, icon: UserCircle2, label: "Profil" },
   ];
 
   const MOBILE_TABS = [
-    { id: "list" as ActiveTab, icon: List, label: "Daftar" },
+    { id: "list" as ActiveTab, icon: List, label: "Tenaga Medis" },
     { id: "map" as ActiveTab, icon: MapIcon, label: "Peta", dot: isOnline },
     { id: "profile" as ActiveTab, icon: UserCircle2, label: "Profil" },
   ];
