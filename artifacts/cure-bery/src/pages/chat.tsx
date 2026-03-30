@@ -93,7 +93,11 @@ export default function ChatPage() {
   };
 
   const handleCancel = () => {
-    setLocation(isNurseMode ? "/nurse-dashboard" : "/patient-dashboard");
+    if (isNurseMode) {
+      setLocation(`/nurse-connected?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`);
+    } else {
+      setLocation("/patient-dashboard");
+    }
   };
 
   return (
@@ -103,7 +107,7 @@ export default function ChatPage() {
       <header className="bg-white border-b border-border/50 shadow-sm z-10 flex-shrink-0">
         <div className="px-4 h-14 flex items-center gap-3">
           <button
-            onClick={() => setLocation(isNurseMode ? "/nurse-dashboard" : "/patient-dashboard")}
+            onClick={handleCancel}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-foreground" />

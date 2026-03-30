@@ -126,7 +126,7 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
               </Button>
               <Button
                 className="w-full h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-md text-sm"
-                onClick={() => setLocation(`/game?opponent=${encodeURIComponent(nurse.name)}`)}
+                onClick={() => setLocation(`/game?opponent=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}`)}
               >
                 <Gamepad2 className="w-4 h-4 mr-2" /> Main Game Bareng 🎮
               </Button>

@@ -19,7 +19,11 @@ export default function GamePage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const opponent = params.get("opponent") ?? "Rekan Nakes";
+  const opponentSpec = params.get("spec") ?? "Perawat Umum";
   const opponentFirst = opponent.split(" ")[0];
+
+  const backToConnected = () =>
+    setLocation(`/nurse-connected?name=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(opponentSpec)}`);
 
   const [board, setBoard] = useState<Cell[]>(Array(9).fill(null));
   const [isX, setIsX] = useState(true);
@@ -58,7 +62,7 @@ export default function GamePage() {
       <header className="bg-white border-b border-border/50 shadow-sm flex-shrink-0 z-10">
         <div className="px-4 h-14 flex items-center gap-3">
           <button
-            onClick={() => setLocation("/nurse-dashboard")}
+            onClick={backToConnected}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
@@ -141,7 +145,7 @@ export default function GamePage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() => setLocation("/nurse-dashboard")}
+            onClick={backToConnected}
             className="flex-1 h-11 border-border/60 rounded-xl font-bold text-muted-foreground hover:text-foreground"
           >
             Keluar
