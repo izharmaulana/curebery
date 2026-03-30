@@ -92,7 +92,7 @@ export function NurseCard({ nurse, onClick, onViewProfile }: NurseCardProps) {
               onClick={(e) => e.stopPropagation()}
             >
               <Phone className="w-4 h-4 mr-1.5" />
-              Hubungi
+              Hubungkan
             </Button>
           </div>
         </div>

@@ -135,7 +135,7 @@ export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, se
                 </div>
                 
                 <Button size="sm" className="w-full bg-primary text-white hover:bg-primary/90">
-                  <Phone className="w-3 h-3 mr-2" /> Hubungi
+                  <Phone className="w-3 h-3 mr-2" /> Hubungkan
                 </Button>
               </div>
             </Popup>

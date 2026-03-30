@@ -71,7 +71,7 @@ function NurseListItem({ nurse, isSelected, onClick }: {
         <div className="mt-2 pt-2 border-t border-border/30 flex items-center justify-between">
           <span className="text-xs font-mono text-muted-foreground">{nurse.strNumber}</span>
           <span className="flex items-center gap-1 text-xs font-semibold text-teal-600 bg-teal-50 border border-teal-200 rounded-lg px-2 py-1">
-            <Phone className="w-3 h-3" /> Hubungi
+            <Phone className="w-3 h-3" /> Hubungkan
           </span>
         </div>
       )}

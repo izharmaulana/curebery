@@ -213,7 +213,7 @@ export function NurseProfileSheet({ nurse, open, onClose }: NurseProfileSheetPro
             disabled={!nurse.isOnline}
           >
             <Phone className="w-4 h-4 mr-2" />
-            {nurse.isOnline ? "Hubungi Sekarang" : "Sedang Offline"}
+            {nurse.isOnline ? "Hubungkan Sekarang" : "Sedang Offline"}
           </Button>
         </div>
       </SheetContent>
