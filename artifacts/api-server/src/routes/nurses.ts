@@ -1,70 +1,9 @@
 import { Router, type IRouter } from "express";
-import { GetNearbyNursesQueryParams, GetNearbyNursesResponse, UpdateNurseLocationBody, UpdateNurseLocationResponse, UpdateNurseStatusBody, UpdateNurseStatusResponse, GetNurseProfileResponse } from "@workspace/api-zod";
+import { db, usersTable, nursesTable } from "@workspace/db";
+import { GetNearbyNursesQueryParams, GetNearbyNursesResponse, UpdateNurseLocationBody, UpdateNurseLocationResponse, UpdateNurseStatusBody, UpdateNurseStatusResponse } from "@workspace/api-zod";
+import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
-
-const DEMO_NURSES = [
-  {
-    id: 1,
-    name: "Siti Rahayu, S.Kep",
-    strNumber: "STR-2024-001234",
-    specialization: "Perawat Umum",
-    isOnline: true,
-    rating: 4.8,
-    lat: -6.2000,
-    lng: 106.8400,
-    totalPatients: 142,
-    yearsExperience: 5,
-  },
-  {
-    id: 2,
-    name: "Budi Santoso, S.Kep",
-    strNumber: "STR-2024-002567",
-    specialization: "Perawat ICU",
-    isOnline: true,
-    rating: 4.9,
-    lat: -6.2100,
-    lng: 106.8500,
-    totalPatients: 98,
-    yearsExperience: 8,
-  },
-  {
-    id: 3,
-    name: "Dewi Anggraini, S.Kep",
-    strNumber: "STR-2024-003891",
-    specialization: "Perawat Anak",
-    isOnline: false,
-    rating: 4.7,
-    lat: -6.1950,
-    lng: 106.8350,
-    totalPatients: 215,
-    yearsExperience: 6,
-  },
-  {
-    id: 4,
-    name: "Ahmad Fauzi, S.Kep",
-    strNumber: "STR-2024-004123",
-    specialization: "Perawat Geriatri",
-    isOnline: true,
-    rating: 4.6,
-    lat: -6.2150,
-    lng: 106.8600,
-    totalPatients: 87,
-    yearsExperience: 4,
-  },
-  {
-    id: 5,
-    name: "Rina Kusuma, S.Kep",
-    strNumber: "STR-2024-005456",
-    specialization: "Perawat Umum",
-    isOnline: false,
-    rating: 4.5,
-    lat: -6.1900,
-    lng: 106.8480,
-    totalPatients: 63,
-    yearsExperience: 3,
-  },
-];
 
 function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
@@ -74,19 +13,39 @@ function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): n
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
-  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
-router.get("/nearby", (req, res) => {
+router.get("/nearby", async (req, res) => {
   try {
     const params = GetNearbyNursesQueryParams.parse(req.query);
-    const radiusKm = params.radius ?? 3;
+    const radiusKm = params.radius ?? 10;
 
-    const nursesWithDistance = DEMO_NURSES.map(nurse => {
-      const distanceKm = calcDistance(params.lat, params.lng, nurse.lat, nurse.lng);
-      return { ...nurse, distanceKm: Math.round(distanceKm * 10) / 10 };
-    }).filter(nurse => nurse.distanceKm <= radiusKm)
+    const rows = await db
+      .select({
+        id: nursesTable.id,
+        userId: nursesTable.userId,
+        name: usersTable.name,
+        strNumber: nursesTable.strNumber,
+        specialization: nursesTable.specialization,
+        isOnline: nursesTable.isOnline,
+        rating: nursesTable.rating,
+        lat: nursesTable.lat,
+        lng: nursesTable.lng,
+        avatarUrl: nursesTable.avatarUrl,
+        totalPatients: nursesTable.totalPatients,
+        yearsExperience: nursesTable.yearsExperience,
+      })
+      .from(nursesTable)
+      .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id));
+
+    const nursesWithDistance = rows
+      .map(nurse => ({
+        ...nurse,
+        avatarUrl: nurse.avatarUrl ?? undefined,
+        distanceKm: Math.round(calcDistance(params.lat, params.lng, nurse.lat, nurse.lng) * 10) / 10,
+      }))
+      .filter(nurse => nurse.distanceKm <= radiusKm)
       .sort((a, b) => a.distanceKm - b.distanceKm);
 
     const response = GetNearbyNursesResponse.parse(nursesWithDistance);
@@ -97,10 +56,27 @@ router.get("/nearby", (req, res) => {
   }
 });
 
-router.put("/me/location", (req, res) => {
+router.put("/me/location", async (req, res) => {
   try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+
     const body = UpdateNurseLocationBody.parse(req.body);
-    req.log.info({ body }, "Nurse location updated");
+
+    const nurses = await db.select().from(nursesTable).where(eq(nursesTable.userId, session.userId)).limit(1);
+    if (nurses.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Profil perawat tidak ditemukan" });
+      return;
+    }
+
+    await db.update(nursesTable)
+      .set({ lat: body.lat, lng: body.lng, updatedAt: new Date() })
+      .where(eq(nursesTable.userId, session.userId));
+
+    req.log.info({ userId: session.userId, lat: body.lat, lng: body.lng }, "Nurse location updated");
     const response = UpdateNurseLocationResponse.parse({ success: true, message: "Lokasi berhasil diperbarui" });
     res.json(response);
   } catch (err) {
@@ -109,25 +85,33 @@ router.put("/me/location", (req, res) => {
   }
 });
 
-router.put("/me/status", (req, res) => {
+router.put("/me/status", async (req, res) => {
   try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+
     const body = UpdateNurseStatusBody.parse(req.body);
-    req.log.info({ body }, "Nurse status updated");
+
+    const nurses = await db.select().from(nursesTable).where(eq(nursesTable.userId, session.userId)).limit(1);
+    if (nurses.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Profil perawat tidak ditemukan" });
+      return;
+    }
+
+    await db.update(nursesTable)
+      .set({ isOnline: body.isOnline, updatedAt: new Date() })
+      .where(eq(nursesTable.userId, session.userId));
+
+    req.log.info({ userId: session.userId, isOnline: body.isOnline }, "Nurse status updated");
     const response = UpdateNurseStatusResponse.parse({ success: true, message: "Status berhasil diperbarui" });
     res.json(response);
   } catch (err) {
     req.log.error({ err }, "Update status error");
     res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak valid" });
   }
-});
-
-router.get("/me/profile", (req, res) => {
-  const nurse = DEMO_NURSES[0];
-  const response = GetNurseProfileResponse.parse({
-    ...nurse,
-    email: "perawat1@cureberry.id",
-  });
-  res.json(response);
 });
 
 export default router;

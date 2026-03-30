@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
-import { useMockableUpdateStatus, useMockableNearbyNurses } from "@/hooks/use-app-queries";
+import { useMockableUpdateStatus, useMockableNearbyNurses, useMockableUpdateLocation } from "@/hooks/use-app-queries";
 import { NurseMap } from "@/components/map/nurse-map";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -618,10 +618,15 @@ export default function NurseDashboard() {
     };
   }, [isOnline]);
 
+  const updateLocation = useMockableUpdateLocation();
+
   const handleLogout = () => { logout(); setLocation("/"); };
   const handleStatusChange = async (checked: boolean) => {
     setIsOnline(checked);
     try {
+      if (checked && isGpsActive) {
+        await updateLocation.mutateAsync({ lat: gpsLocation.lat, lng: gpsLocation.lng });
+      }
       await updateStatus.mutateAsync({ isOnline: checked });
       toast({ title: "Status Diperbarui", description: `Anda sekarang ${checked ? "Online 🟢" : "Offline ⚫"}` });
     } catch {

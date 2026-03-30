@@ -1,52 +1,45 @@
 import { Router, type IRouter } from "express";
-import { db } from "@workspace/db";
-import { usersTable } from "@workspace/db";
+import { db, usersTable, nursesTable } from "@workspace/db";
 import { LoginPatientBody, LoginNurseBody, LoginPatientResponse, LoginNurseResponse, GetCurrentUserResponse, LogoutResponse, RegisterNurseBody } from "@workspace/api-zod";
 import { eq } from "drizzle-orm";
+import crypto from "crypto";
 
 const router: IRouter = Router();
 
-type DemoUser = { id: number; email: string; password: string; name: string; role: "patient" | "nurse" };
-const DEMO_USERS: DemoUser[] = [
-  { id: 1, email: "pasien@cureberry.id", password: "password123", name: "Budi Pratama", role: "patient" },
-  { id: 2, email: "pasien2@cureberry.id", password: "password123", name: "Ani Wulandari", role: "patient" },
-  { id: 3, email: "perawat1@cureberry.id", password: "password123", name: "Siti Rahayu, S.Kep", role: "nurse" },
-  { id: 4, email: "perawat2@cureberry.id", password: "password123", name: "Budi Santoso, S.Kep", role: "nurse" },
-];
+const hashPassword = (password: string) =>
+  crypto.createHash("sha256").update(password + "curebery_salt_v1").digest("hex");
 
-let nextId = 100;
+const DEFAULT_LAT = -6.2088;
+const DEFAULT_LNG = 106.8456;
 
-router.post("/register/patient", (req, res) => {
+router.post("/register/patient", async (req, res) => {
   try {
-    const { name, email, password, phone, birthDate, gender, address, bloodType } = req.body;
+    const { name, email, password, phone, birthDate, gender } = req.body;
 
     if (!name || !email || !password || !phone || !birthDate || !gender) {
       res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak lengkap, pastikan semua field wajib terisi" });
       return;
     }
 
-    const existing = DEMO_USERS.find(u => u.email === email);
-    if (existing) {
+    const existing = await db.select().from(usersTable).where(eq(usersTable.email, email)).limit(1);
+    if (existing.length > 0) {
       res.status(409).json({ error: "EMAIL_EXISTS", message: "Email sudah terdaftar, silakan gunakan email lain" });
       return;
     }
 
-    const newId = nextId++;
-    const newUser: DemoUser = {
-      id: newId,
+    const [newUser] = await db.insert(usersTable).values({
       email,
-      password,
+      passwordHash: hashPassword(password),
       name,
       role: "patient",
-    };
-    DEMO_USERS.push(newUser);
+    }).returning();
 
-    req.log.info({ userId: newId, email }, "Patient registered");
+    req.log.info({ userId: newUser.id, email }, "Patient registered");
 
     res.status(201).json({
       success: true,
-      user: { id: newId, email, name, role: "patient" },
-      token: `demo-token-${newId}`,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+      token: `token-${newUser.id}`,
     });
   } catch (err) {
     req.log.error({ err }, "Register patient error");
@@ -54,32 +47,41 @@ router.post("/register/patient", (req, res) => {
   }
 });
 
-router.post("/register/nurse", (req, res) => {
+router.post("/register/nurse", async (req, res) => {
   try {
     const body = RegisterNurseBody.parse(req.body);
 
-    const existing = DEMO_USERS.find(u => u.email === body.email);
-    if (existing) {
+    const existing = await db.select().from(usersTable).where(eq(usersTable.email, body.email)).limit(1);
+    if (existing.length > 0) {
       res.status(409).json({ error: "EMAIL_EXISTS", message: "Email sudah terdaftar, silakan gunakan email lain" });
       return;
     }
 
-    const newId = nextId++;
-    const newUser: DemoUser = {
-      id: newId,
+    const [newUser] = await db.insert(usersTable).values({
       email: body.email,
-      password: body.password,
+      passwordHash: hashPassword(body.password),
       name: body.name,
       role: "nurse",
-    };
-    DEMO_USERS.push(newUser);
+    }).returning();
 
-    req.log.info({ userId: newId, email: body.email }, "Nurse registered");
+    await db.insert(nursesTable).values({
+      userId: newUser.id,
+      strNumber: body.strNumber,
+      specialization: body.specialization,
+      isOnline: false,
+      rating: 4.5,
+      lat: DEFAULT_LAT,
+      lng: DEFAULT_LNG,
+      totalPatients: 0,
+      yearsExperience: body.yearsExperience ?? 0,
+    });
+
+    req.log.info({ userId: newUser.id, email: body.email }, "Nurse registered");
 
     res.status(201).json({
       success: true,
-      user: { id: newId, email: body.email, name: body.name, role: "nurse" },
-      token: `demo-token-${newId}`,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
+      token: `token-${newUser.id}`,
     });
   } catch (err) {
     req.log.error({ err }, "Register nurse error");
@@ -87,18 +89,17 @@ router.post("/register/nurse", (req, res) => {
   }
 });
 
-router.post("/login/patient", (req, res) => {
+router.post("/login/patient", async (req, res) => {
   try {
     const body = LoginPatientBody.parse(req.body);
-    const user = DEMO_USERS.find(u => u.email === body.email && u.password === body.password && u.role === "patient");
 
-    if (!user) {
+    const users = await db.select().from(usersTable)
+      .where(eq(usersTable.email, body.email))
+      .limit(1);
+
+    const user = users[0];
+    if (!user || user.role !== "patient" || user.passwordHash !== hashPassword(body.password)) {
       res.status(401).json({ error: "UNAUTHORIZED", message: "Email atau password salah" });
-      return;
-    }
-
-    if (!req.session) {
-      res.status(500).json({ error: "SESSION_ERROR", message: "Session tidak tersedia" });
       return;
     }
 
@@ -108,7 +109,7 @@ router.post("/login/patient", (req, res) => {
     const response = LoginPatientResponse.parse({
       success: true,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      token: `demo-token-${user.id}`,
+      token: `token-${user.id}`,
     });
     res.json(response);
   } catch (err) {
@@ -117,18 +118,17 @@ router.post("/login/patient", (req, res) => {
   }
 });
 
-router.post("/login/nurse", (req, res) => {
+router.post("/login/nurse", async (req, res) => {
   try {
     const body = LoginNurseBody.parse(req.body);
-    const user = DEMO_USERS.find(u => u.email === body.email && u.password === body.password && u.role === "nurse");
 
-    if (!user) {
+    const users = await db.select().from(usersTable)
+      .where(eq(usersTable.email, body.email))
+      .limit(1);
+
+    const user = users[0];
+    if (!user || user.role !== "nurse" || user.passwordHash !== hashPassword(body.password)) {
       res.status(401).json({ error: "UNAUTHORIZED", message: "Email atau password salah" });
-      return;
-    }
-
-    if (!req.session) {
-      res.status(500).json({ error: "SESSION_ERROR", message: "Session tidak tersedia" });
       return;
     }
 
@@ -138,7 +138,7 @@ router.post("/login/nurse", (req, res) => {
     const response = LoginNurseResponse.parse({
       success: true,
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
-      token: `demo-token-${user.id}`,
+      token: `token-${user.id}`,
     });
     res.json(response);
   } catch (err) {
@@ -154,19 +154,19 @@ router.post("/logout", (req, res) => {
       res.json(response);
     });
   } else {
-    const response = LogoutResponse.parse({ success: true, message: "Logout berhasil" });
-    res.json(response);
+    res.json({ success: true, message: "Logout berhasil" });
   }
 });
 
-router.get("/me", (req, res) => {
+router.get("/me", async (req, res) => {
   const session = req.session as any;
   if (!session?.userId) {
     res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
     return;
   }
 
-  const user = DEMO_USERS.find(u => u.id === session.userId);
+  const users = await db.select().from(usersTable).where(eq(usersTable.id, session.userId)).limit(1);
+  const user = users[0];
   if (!user) {
     res.status(401).json({ error: "UNAUTHORIZED", message: "User tidak ditemukan" });
     return;

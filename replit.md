@@ -33,9 +33,21 @@ Platform layanan perawat online Indonesia.
 - Rating Modal: muncul setelah tenaga medis tiba di lokasi tracking (bintang 1-5 + quick tags + komentar)
 - Leaderboard Kuis (`/leaderboard`): podium top 3 + daftar peringkat dengan badge, skor disimpan dari game-quiz
 
-**Demo Accounts:**
-- Pasien: pasien@cureberry.id / password123
-- Perawat: perawat1@cureberry.id / password123
+**Demo Accounts (stored in PostgreSQL):**
+- Pasien: budi@test.com / test123
+- Perawat: rina@test.com / test123
+
+**Backend Architecture:**
+- PostgreSQL + Drizzle ORM for all data (no in-memory state)
+- Session-based auth via express-session (connect.sid cookie)
+- SHA-256 password hashing (demo grade)
+- Vite dev proxy: `/api/*` → API server port 8080
+- Auto-refetch every 20s for real-time nurse list
+
+**Known Working Flows (E2E tested):**
+- Patient login → dashboard with map + nearby nurses
+- Nurse login → dashboard with online/offline toggle
+- Nurse toggle status → persists to DB, visible to patients
 
 ## Structure
 
