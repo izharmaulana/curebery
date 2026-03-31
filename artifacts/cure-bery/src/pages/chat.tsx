@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Send,
-  CheckCheck, ShoppingBag, X, Info, Gamepad2,
+  CheckCheck, ShoppingBag, X, Info,
 } from "lucide-react";
 import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
@@ -44,7 +44,6 @@ export default function ChatPage() {
   const nurseName = params.get("name") ?? "Tenaga Medis";
   const nurseSpec = params.get("spec") ?? "Perawat Umum";
   const isNurseMode = params.get("type") === "nurse";
-  const isNurseToNurse = false;
 
   const [messages, setMessages] = useState<Message[]>(isNurseMode ? NURSE_DEMO_MESSAGES : DEMO_MESSAGES);
   const [input, setInput] = useState("");
@@ -61,23 +60,14 @@ export default function ChatPage() {
     return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   };
 
-  const NURSE_REPLIES = [
-    "Iya bener banget! Pengalaman yang sama haha 😂",
-    "Wah seru, nanti share ilmunya ya 🙏",
-    "Setuju! Kita harus saling support sesama nakes 💪",
-    "Iya nih, sambil nunggu pasien ngobrol dulu yuk 😄",
-    "Hahaha bener banget, relate sekali 🎯",
-  ];
-  let replyIdx = 0;
-
   const sendMessage = () => {
     if (!input.trim()) return;
-    setMessages(prev => [...prev, { 
-      id: Date.now(), 
-      from: "client", 
-      text: input.trim(), 
-      time: now(), 
-      read: false 
+    setMessages(prev => [...prev, {
+      id: Date.now(),
+      from: "client",
+      text: input.trim(),
+      time: now(),
+      read: false,
     }]);
     setInput("");
   };
@@ -90,7 +80,7 @@ export default function ChatPage() {
     setShowOrderConfirm(false);
     setOrdered(true);
     showNotification({
-      title: "✅ Order Berhasil Dikirim!",
+      title: "Order Berhasil Dikirim!",
       body: `${nurseName} akan segera menuju lokasi Anda`,
       tag: "order-sent",
     });
@@ -137,8 +127,6 @@ export default function ChatPage() {
       {/* Messages */}
       <ScrollArea className="flex-1 px-4 py-4">
         <div className="space-y-3 max-w-xl mx-auto">
-
-          {/* Info chip */}
           <div className="flex justify-center">
             <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-white border border-border/40 rounded-full px-3 py-1 shadow-sm">
               <Info className="w-3 h-3" />
@@ -202,11 +190,7 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 <Button
                   className="flex-1 h-10 bg-emerald-600 text-white font-bold"
-                  onClick={() =>
-                    setLocation(
-                      `/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`
-                    )
-                  }
+                  onClick={() => setLocation(`/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`)}
                 >
                   Terima Order
                 </Button>
@@ -219,13 +203,13 @@ export default function ChatPage() {
                 </Button>
               </div>
               <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
-                sambil nunggu pasien, ngobrol dulu yuk! 😄
+                sambil nunggu pasien, ngobrol dulu yuk!
               </p>
             </div>
           ) : ordered ? (
             <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
               <ShoppingBag className="w-4 h-4 text-emerald-600" />
-              <span className="text-sm font-bold text-emerald-700">Order dikirim! Tenaga medis segera datang 🚀</span>
+              <span className="text-sm font-bold text-emerald-700">Order dikirim! Tenaga medis segera datang</span>
             </div>
           ) : showOrderConfirm ? (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
@@ -257,7 +241,7 @@ export default function ChatPage() {
                 </Button>
               </div>
               <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
-                nego dulu di chat baru klik order yahhhhhhh 🙏
+                nego dulu di chat baru klik order ya
               </p>
             </>
           )}
