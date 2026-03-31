@@ -10,6 +10,7 @@ import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
 interface Message {
   id: number;
+  senderUserId: number;
   senderRole: "patient" | "nurse";
   text: string;
   createdAt: string;
@@ -25,51 +26,71 @@ export default function ChatPage() {
   const isNurseMode = params.get("type") === "nurse";
 
   const [messages, setMessages] = useState<Message[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showOrderConfirm, setShowOrderConfirm] = useState(false);
   const [ordered, setOrdered] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const lastIdRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 
+  // Fetch current user ID once on mount
+  useEffect(() => {
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.id) setCurrentUserId(data.id); })
+      .catch(() => {});
+  }, []);
+
   const fetchMessages = useCallback(async (initial = false) => {
     if (!connectionId) return;
     try {
-      const url = lastIdRef.current > 0 && !initial
-        ? `/api/messages/${connectionId}?sinceId=${lastIdRef.current}`
-        : `/api/messages/${connectionId}`;
-      const res = await fetch(url, { credentials: "include" });
-      if (!res.ok) return;
-      const data: Message[] = await res.json();
-      if (data.length > 0) {
-        setMessages(prev => {
-          if (initial) return data;
-          const newMsgs = data.filter(m => !prev.some(p => p.id === m.id));
-          return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
-        });
-        lastIdRef.current = data[data.length - 1].id;
-        if (!initial) setTimeout(scrollToBottom, 50);
+      // Always fetch all messages for simplicity and reliability
+      const res = await fetch(`/api/messages/${connectionId}`, {
+        credentials: "include",
+        cache: "no-store",
+        headers: { "Cache-Control": "no-cache" },
+      });
+      if (!res.ok) {
+        if (initial) setFetchError(true);
+        return;
       }
-    } catch {}
+      setFetchError(false);
+      const data: Message[] = await res.json();
+      setMessages(prev => {
+        if (initial) return data;
+        // Merge new messages only
+        const maxId = prev.length > 0 ? Math.max(...prev.map(m => m.id)) : 0;
+        const newMsgs = data.filter(m => m.id > maxId);
+        return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
+      });
+      if (data.length > 0) {
+        lastIdRef.current = data[data.length - 1].id;
+      }
+    } catch {
+      if (initial) setFetchError(true);
+    }
   }, [connectionId]);
 
   useEffect(() => {
     if (!connectionId) return;
     setLoading(true);
+    lastIdRef.current = 0;
     fetchMessages(true).then(() => {
       setLoading(false);
       setTimeout(scrollToBottom, 100);
     });
     if (!isNurseMode) requestNotifPermission();
-    pollRef.current = setInterval(() => fetchMessages(false), 2000);
+    pollRef.current = setInterval(() => fetchMessages(false), 1500);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [connectionId, fetchMessages]);
 
-  useEffect(() => { scrollToBottom(); }, [messages]);
+  useEffect(() => { if (messages.length > 0) scrollToBottom(); }, [messages.length]);
 
   const sendMessage = async () => {
     if (!input.trim() || !connectionId || sending) return;
@@ -85,8 +106,10 @@ export default function ChatPage() {
       });
       if (res.ok) {
         const msg: Message = await res.json();
-        setMessages(prev => [...prev, msg]);
-        lastIdRef.current = msg.id;
+        setMessages(prev => {
+          if (prev.some(m => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
         setTimeout(scrollToBottom, 50);
       }
     } catch {}
@@ -111,9 +134,16 @@ export default function ChatPage() {
     else setLocation("/patient-dashboard");
   };
 
+  const isMine = (msg: Message): boolean => {
+    // Use actual user ID if available (most reliable)
+    if (currentUserId !== null) return msg.senderUserId === currentUserId;
+    // Fallback: use role from URL params
+    return isNurseMode ? msg.senderRole === "nurse" : msg.senderRole === "patient";
+  };
+
   const initials = partnerName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
 
-  const now = (iso: string) => {
+  const formatTime = (iso: string) => {
     const d = new Date(iso);
     return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   };
@@ -139,11 +169,20 @@ export default function ChatPage() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm text-foreground leading-none truncate">{partnerName}</p>
-              <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{nurseSpec} · Online</p>
+              <p className="text-[11px] text-emerald-600 font-medium mt-0.5">
+                {nurseSpec} · {isNurseMode ? "Mode Perawat" : "Mode Pasien"} · Online
+              </p>
             </div>
           </div>
         </div>
       </header>
+
+      {/* Error banner */}
+      {fetchError && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-xs text-red-600 text-center flex-shrink-0">
+          Gagal memuat pesan. Pastikan kamu sudah login. <button className="underline font-semibold" onClick={() => setLocation("/")}>Login ulang</button>
+        </div>
+      )}
 
       {/* Messages */}
       <ScrollArea className="flex-1 px-4 py-4">
@@ -165,25 +204,25 @@ export default function ChatPage() {
             </div>
           ) : (
             messages.map(msg => {
-              const isMine = isNurseMode ? msg.senderRole === "nurse" : msg.senderRole === "patient";
+              const mine = isMine(msg);
               return (
-                <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-                  {!isMine && (
+                <div key={msg.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  {!mine && (
                     <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white text-[10px] font-bold mr-2 flex-shrink-0 mt-1">
                       {initials}
                     </div>
                   )}
-                  <div className={`max-w-[72%] flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
+                  <div className={`max-w-[72%] flex flex-col gap-1 ${mine ? "items-end" : "items-start"}`}>
                     <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                      isMine
+                      mine
                         ? "bg-blue-600 text-white rounded-br-sm"
                         : "bg-white text-foreground border border-border/40 shadow-sm rounded-bl-sm"
                     }`}>
                       {msg.text}
                     </div>
-                    <div className={`flex items-center gap-1 text-[10px] text-muted-foreground ${isMine ? "flex-row-reverse" : ""}`}>
-                      <span>{now(msg.createdAt)}</span>
-                      {isMine && <CheckCheck className="w-3 h-3 text-blue-400" />}
+                    <div className={`flex items-center gap-1 text-[10px] text-muted-foreground ${mine ? "flex-row-reverse" : ""}`}>
+                      <span>{formatTime(msg.createdAt)}</span>
+                      {mine && <CheckCheck className="w-3 h-3 text-blue-400" />}
                     </div>
                   </div>
                 </div>
@@ -204,7 +243,7 @@ export default function ChatPage() {
             className="flex-1 h-10 bg-gray-50 border-border/60 rounded-xl text-sm"
             value={input}
             onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && sendMessage()}
+            onKeyDown={e => e.key === "Enter" && !sending && sendMessage()}
             disabled={sending}
           />
           <button

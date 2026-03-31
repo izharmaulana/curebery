@@ -664,6 +664,8 @@ export default function NurseDashboard() {
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
           setIncomingRequest(prev => prev ?? { id: data[0].id, patientName: data[0].patientName, nurseSpec: data[0].nurseSpec });
+        } else {
+          setIncomingRequest(null);
         }
       } catch { }
     };
@@ -674,14 +676,20 @@ export default function NurseDashboard() {
 
   const handleAcceptConnection = async () => {
     if (!incomingRequest) return;
+    // Stop polling immediately so no stale state interferes
+    if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; }
+    const captured = { ...incomingRequest };
+    setIncomingRequest(null);
     try {
-      await fetch(`/api/connections/${incomingRequest.id}/accept`, { method: "PUT", credentials: "include" });
-      toast({ title: "✅ Permintaan diterima!", description: `Anda terhubung dengan ${incomingRequest.patientName}` });
-      setIncomingRequest(null);
-      setLocation(`/chat?connectionId=${incomingRequest.id}&name=${encodeURIComponent(incomingRequest.patientName)}&spec=${encodeURIComponent(incomingRequest.nurseSpec)}&type=nurse`);
+      await fetch(`/api/connections/${captured.id}/accept`, { method: "PUT", credentials: "include" });
+      toast({ title: "✅ Permintaan diterima!", description: `Anda terhubung dengan ${captured.patientName}` });
     } catch {
       toast({ title: "Gagal menerima permintaan", variant: "destructive" });
     }
+    // Navigate after React finishes processing
+    setTimeout(() => {
+      setLocation(`/chat?connectionId=${captured.id}&name=${encodeURIComponent(captured.patientName)}&spec=${encodeURIComponent(captured.nurseSpec)}&type=nurse`);
+    }, 200);
   };
 
   const handleRejectConnection = async () => {
