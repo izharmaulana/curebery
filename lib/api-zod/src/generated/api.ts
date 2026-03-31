@@ -129,6 +129,12 @@ export const GetNearbyNursesResponseItem = zod.object({
   lat: zod.number(),
   lng: zod.number(),
   avatarUrl: zod.string().optional(),
+  bio: zod.string().nullable().optional(),
+  phone: zod.string().nullable().optional(),
+  address: zod.string().nullable().optional(),
+  services: zod.string().nullable().optional(),
+  totalPatients: zod.number().nullable().optional(),
+  yearsExperience: zod.number().nullable().optional(),
 });
 export const GetNearbyNursesResponse = zod.array(GetNearbyNursesResponseItem);
 

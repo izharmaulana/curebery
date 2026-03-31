@@ -36,6 +36,10 @@ router.get("/nearby", async (req, res) => {
       avatarUrl: nursesTable.avatarUrl,
       totalPatients: nursesTable.totalPatients,
       yearsExperience: nursesTable.yearsExperience,
+      bio: nursesTable.bio,
+      phone: nursesTable.phone,
+      address: nursesTable.address,
+      services: nursesTable.services,
     })
     .from(nursesTable)
     .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id))

@@ -9,72 +9,6 @@ import {
   Clock, Award, Stethoscope, ShieldCheck, X
 } from "lucide-react";
 
-const NURSE_EXTRAS: Record<number, {
-  bio: string;
-  experienceYears: number;
-  totalServices: number;
-  price: string;
-  services: string[];
-  education: string;
-  availability: string;
-}> = {
-  1: {
-    bio: "Perawat berpengalaman dengan fokus pada perawatan luka, infus, dan monitoring kondisi pasien di rumah. Memiliki pengalaman bekerja di RS Cipto Mangunkusumo selama 6 tahun.",
-    experienceYears: 6,
-    totalServices: 312,
-    price: "Rp 150.000 / kunjungan",
-    services: ["Perawatan Luka", "Pemasangan Infus", "Injeksi", "Pengukuran Vital Sign", "Konsultasi Kesehatan"],
-    education: "S.Kep – Universitas Indonesia",
-    availability: "Senin – Sabtu, 07.00 – 20.00",
-  },
-  2: {
-    bio: "Spesialis perawatan intensif dengan keahlian dalam penanganan pasien kritis dan post-operasi. Berpengalaman di ICU RSUD Tarakan Jakarta.",
-    experienceYears: 8,
-    totalServices: 487,
-    price: "Rp 200.000 / kunjungan",
-    services: ["Perawatan Post-Operasi", "Monitor Pasien Kritis", "Pemasangan NGT", "Suction", "Injeksi IV"],
-    education: "S.Kep – Universitas Airlangga",
-    availability: "Setiap Hari, 08.00 – 22.00",
-  },
-  3: {
-    bio: "Perawat anak yang lembut dan sabar, berpengalaman menangani bayi, balita, dan anak-anak dengan berbagai kondisi medis.",
-    experienceYears: 5,
-    totalServices: 228,
-    price: "Rp 175.000 / kunjungan",
-    services: ["Perawatan Bayi", "Imunisasi Anak", "Nebulisasi", "Pemantauan Tumbuh Kembang", "Perawatan Luka Anak"],
-    education: "S.Kep – Universitas Padjajaran",
-    availability: "Senin – Jumat, 08.00 – 18.00",
-  },
-  4: {
-    bio: "Spesialis perawatan lansia dengan keahlian khusus dalam rehabilitasi, pendampingan harian, dan penanganan penyakit degeneratif.",
-    experienceYears: 10,
-    totalServices: 563,
-    price: "Rp 180.000 / kunjungan",
-    services: ["Perawatan Lansia", "Fisioterapi Ringan", "Manajemen Obat", "Pemantauan Gula Darah", "Perawatan Dekubitus"],
-    education: "S.Kep – Universitas Diponegoro",
-    availability: "Senin – Minggu, 07.00 – 19.00",
-  },
-  5: {
-    bio: "Perawat umum yang berdedikasi, siap membantu berbagai kebutuhan medis dasar di rumah dengan pelayanan yang profesional dan ramah.",
-    experienceYears: 4,
-    totalServices: 189,
-    price: "Rp 130.000 / kunjungan",
-    services: ["Perawatan Luka", "Injeksi", "Pengukuran Vital Sign", "Pemasangan Infus", "Konsultasi Medis"],
-    education: "S.Kep – Universitas Hasanuddin",
-    availability: "Selasa – Minggu, 08.00 – 20.00",
-  },
-};
-
-const DEFAULT_EXTRA = {
-  bio: "Tenaga medis profesional dengan dedikasi tinggi dalam memberikan pelayanan perawatan kesehatan terbaik di rumah.",
-  experienceYears: 3,
-  totalServices: 120,
-  price: "Rp 150.000 / kunjungan",
-  services: ["Perawatan Luka", "Injeksi", "Pengukuran Vital Sign", "Konsultasi Kesehatan"],
-  education: "S.Kep – Universitas Negeri",
-  availability: "Senin – Sabtu, 08.00 – 20.00",
-};
-
 interface NurseProfileSheetProps {
   nurse: NursePublicProfile | null;
   open: boolean;
@@ -85,15 +19,24 @@ interface NurseProfileSheetProps {
 export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProfileSheetProps) {
   if (!nurse) return null;
 
-  const extra = NURSE_EXTRAS[nurse.id] ?? DEFAULT_EXTRA;
   const initials = nurse.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+
+  const bio = nurse.bio ?? "Tenaga medis profesional dengan dedikasi tinggi dalam memberikan pelayanan perawatan kesehatan terbaik di rumah.";
+  const yearsExperience = nurse.yearsExperience ?? 0;
+  const totalPatients = nurse.totalPatients ?? 0;
+  const phone = nurse.phone;
+  const address = nurse.address;
+
+  let services: string[] = [];
+  if (nurse.services) {
+    try { services = JSON.parse(nurse.services); } catch { services = [nurse.services]; }
+  }
 
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
         <SheetHeader className="p-0 space-y-0">
           <SheetTitle className="sr-only">Profil Tenaga Medis</SheetTitle>
-          {/* Hero banner */}
           <div className="relative bg-gradient-to-br from-teal-500 via-teal-600 to-emerald-700 pt-10 pb-6 px-6">
             <button
               onClick={onClose}
@@ -138,17 +81,17 @@ export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProf
               <div className="bg-white rounded-xl p-3 text-center border border-border/40 shadow-sm">
                 <div className="flex items-center justify-center gap-1 text-amber-500 font-bold text-lg">
                   <Star className="w-4 h-4 fill-current" />
-                  {nurse.rating.toFixed(1)}
+                  {nurse.rating > 0 ? nurse.rating.toFixed(1) : "-"}
                 </div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">Rating</p>
               </div>
               <div className="bg-white rounded-xl p-3 text-center border border-border/40 shadow-sm">
-                <div className="font-bold text-lg text-foreground">{extra.experienceYears} thn</div>
+                <div className="font-bold text-lg text-foreground">{yearsExperience > 0 ? `${yearsExperience} thn` : "-"}</div>
                 <p className="text-[11px] text-muted-foreground mt-0.5">Pengalaman</p>
               </div>
               <div className="bg-white rounded-xl p-3 text-center border border-border/40 shadow-sm">
-                <div className="font-bold text-lg text-foreground">{extra.totalServices}</div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">Layanan</p>
+                <div className="font-bold text-lg text-foreground">{totalPatients > 0 ? totalPatients : "-"}</div>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Pasien</p>
               </div>
             </div>
 
@@ -158,20 +101,12 @@ export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProf
                 <Stethoscope className="w-4 h-4 text-teal-600" />
                 Tentang
               </h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{extra.bio}</p>
+              <p className="text-sm text-muted-foreground leading-relaxed">{bio}</p>
             </div>
 
             {/* Info grid */}
             <div className="bg-white rounded-xl p-4 border border-border/40 shadow-sm space-y-3">
               <h3 className="font-bold text-sm text-foreground mb-1">Informasi</h3>
-              <div className="flex items-center gap-3 text-sm">
-                <Award className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                <span className="text-muted-foreground">{extra.education}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <Clock className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                <span className="text-muted-foreground">{extra.availability}</span>
-              </div>
               <div className="flex items-center gap-3 text-sm">
                 <MapPin className="w-4 h-4 text-teal-600 flex-shrink-0" />
                 <span className="text-muted-foreground">{nurse.distanceKm} km dari lokasi Anda</span>
@@ -180,26 +115,44 @@ export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProf
                 <ShieldCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
                 <span className="text-muted-foreground font-mono text-xs">{nurse.strNumber}</span>
               </div>
+              {phone && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Phone className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                  <span className="text-muted-foreground">{phone}</span>
+                </div>
+              )}
+              {address && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Award className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                  <span className="text-muted-foreground">{address}</span>
+                </div>
+              )}
             </div>
 
             {/* Services */}
-            <div className="bg-white rounded-xl p-4 border border-border/40 shadow-sm">
-              <h3 className="font-bold text-sm text-foreground mb-3">Layanan yang Tersedia</h3>
-              <div className="space-y-2">
-                {extra.services.map((service, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <CheckCircle2 className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                    {service}
-                  </div>
-                ))}
+            {services.length > 0 && (
+              <div className="bg-white rounded-xl p-4 border border-border/40 shadow-sm">
+                <h3 className="font-bold text-sm text-foreground mb-3">Layanan yang Tersedia</h3>
+                <div className="space-y-2">
+                  {services.map((service, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <CheckCircle2 className="w-4 h-4 text-teal-500 flex-shrink-0" />
+                      {service}
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
-            {/* Tariff */}
-            <div className="bg-gradient-to-r from-teal-50 to-emerald-50 rounded-xl p-4 border border-teal-100">
-              <p className="text-xs text-teal-700 font-medium mb-0.5">Tarif Layanan</p>
-              <p className="text-xl font-bold text-teal-800">{extra.price}</p>
-            </div>
+            {services.length === 0 && (
+              <div className="bg-white rounded-xl p-4 border border-border/40 shadow-sm">
+                <h3 className="font-bold text-sm text-foreground mb-2">
+                  <Clock className="w-4 h-4 text-teal-600 inline mr-2" />
+                  Spesialisasi
+                </h3>
+                <p className="text-sm text-muted-foreground">{nurse.specialization}</p>
+              </div>
+            )}
 
           </div>
         </ScrollArea>

@@ -17,4 +17,10 @@ export interface NursePublicProfile {
   lat: number;
   lng: number;
   avatarUrl?: string;
+  bio?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  services?: string | null;
+  totalPatients?: number | null;
+  yearsExperience?: number | null;
 }
