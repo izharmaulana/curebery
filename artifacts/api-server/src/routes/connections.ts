@@ -239,6 +239,110 @@ router.put("/:id/reject", async (req, res) => {
   }
 });
 
+router.put("/:id/order", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const { lat, lng } = req.body;
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    if (rows[0].patientUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
+    if (rows[0].status !== "accepted") { res.status(400).json({ error: "NOT_ACCEPTED" }); return; }
+    await db.update(connectionsTable)
+      .set({ orderStatus: "ordered", patientLat: lat ?? null, patientLng: lng ?? null, updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Place order error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
+router.put("/:id/accept-order", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    if (rows[0].nurseUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
+    await db.update(connectionsTable)
+      .set({ orderStatus: "order_accepted", updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Accept order error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
+router.put("/:id/reject-order", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    if (rows[0].nurseUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
+    await db.update(connectionsTable)
+      .set({ orderStatus: "order_rejected", updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Reject order error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
+router.get("/:id/order-status", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    const conn = rows[0];
+    if (conn.patientUserId !== session.userId && conn.nurseUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN" }); return;
+    }
+    res.json({
+      orderStatus: conn.orderStatus,
+      patientName: conn.patientName,
+      nurseSpec: conn.nurseSpec,
+      patientLat: conn.patientLat,
+      patientLng: conn.patientLng,
+    });
+  } catch (err) {
+    req.log.error({ err }, "Get order status error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
+router.get("/:id/patient-location", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    const conn = rows[0];
+    if (conn.patientUserId !== session.userId && conn.nurseUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN" }); return;
+    }
+    if (conn.patientLat == null || conn.patientLng == null) {
+      res.status(404).json({ error: "NO_LOCATION" }); return;
+    }
+    res.json({ lat: conn.patientLat, lng: conn.patientLng });
+  } catch (err) {
+    req.log.error({ err }, "Get patient location error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
 router.get("/:id/nurse-location", async (req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");
