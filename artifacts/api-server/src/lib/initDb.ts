@@ -83,6 +83,10 @@ export async function initDb(pool: pg.Pool) {
         ADD COLUMN IF NOT EXISTS patient_lng real;
     `);
 
+    // Reset semua perawat ke offline saat server restart (bersihkan status lama)
+    await pool.query(`UPDATE nurses SET is_online = false WHERE is_online = true;`);
+    logger.info("All nurses set to offline on startup");
+
     logger.info("Database tables initialized successfully");
   } catch (err) {
     logger.error({ err }, "Failed to initialize database tables");
