@@ -121,6 +121,9 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
   const [serviceInput, setServiceInput] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isCompressing, setIsCompressing] = useState(false);
+  const [strNumber, setStrNumber] = useState("");
+  const [email, setEmail] = useState("");
+  const [yearsExperience, setYearsExperience] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -135,6 +138,9 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
         if (data.bio) setBio(data.bio);
         if (data.services?.length) setServices(data.services);
         if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
+        if (data.strNumber) setStrNumber(data.strNumber);
+        if (data.email) setEmail(data.email);
+        if (typeof data.yearsExperience === "number") setYearsExperience(data.yearsExperience);
       })
       .catch(() => {})
       .finally(() => setIsLoadingProfile(false));
@@ -243,7 +249,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
             <p className="text-white/80 text-sm mt-0.5">{specialization}</p>
             <div className="flex items-center justify-center gap-2 mt-2">
               <Badge className="bg-white/20 text-white border-white/30 text-xs font-mono hover:bg-white/30">
-                STR-2024-001234
+                {strNumber || "STR belum diisi"}
               </Badge>
               <Badge className="bg-emerald-400/30 text-white border-emerald-300/40 text-xs hover:bg-emerald-400/40">
                 <CheckCircle2 className="w-3 h-3 mr-1" /> Terverifikasi
@@ -288,7 +294,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
           {[
             { icon: Star, val: nurseRating > 0 ? String(nurseRating) : "Baru", label: "Rating", color: "text-amber-500", bg: "bg-amber-50", border: "border-amber-100" },
             { icon: Users, val: String(nurseTotalPatients), label: "Layanan", color: "text-blue-600", bg: "bg-blue-50", border: "border-blue-100" },
-            { icon: Award, val: "3 Thn", label: "Pengalaman", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
+            { icon: Award, val: yearsExperience > 0 ? `${yearsExperience} Thn` : "Baru", label: "Pengalaman", color: "text-purple-600", bg: "bg-purple-50", border: "border-purple-100" },
           ].map(s => (
             <div key={s.label} className={`${s.bg} ${s.border} border rounded-xl p-2.5 text-center`}>
               <div className={`font-bold text-base ${s.color} flex items-center justify-center gap-1`}>
@@ -360,7 +366,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
             <>
               {[
                 { icon: UserCircle2, label: "Nama", value: name },
-                { icon: Mail, label: "Email", value: "perawat@cureberry.id" },
+                { icon: Mail, label: "Email", value: email || "-" },
                 { icon: PhoneIcon, label: "Nomor HP", value: phone },
                 { icon: Activity, label: "Spesialisasi", value: specialization },
                 { icon: Home, label: "Alamat", value: address },

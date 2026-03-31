@@ -87,6 +87,7 @@ router.get("/me", async (req, res) => {
         services: nursesTable.services,
         avatarUrl: nursesTable.avatarUrl,
         name: usersTable.name,
+        email: usersTable.email,
       })
       .from(nursesTable)
       .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id))

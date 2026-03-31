@@ -77,6 +77,8 @@ router.post("/register/nurse", async (req, res) => {
       lng: DEFAULT_LNG,
       totalPatients: 0,
       yearsExperience: body.yearsExperience ?? 0,
+      phone: body.phone ?? null,
+      address: body.address ?? null,
     });
 
     (req.session as any).userId = newUser.id;
