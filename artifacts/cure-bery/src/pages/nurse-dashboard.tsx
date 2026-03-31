@@ -24,7 +24,7 @@ import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { NurseConnectModal } from "@/components/nurse/nurse-connect-modal";
 import { IncomingConnectNotif } from "@/components/nurse/incoming-connect-notif";
 import { useGeolocation } from "@/hooks/use-geolocation";
-import { requestNotifPermission, notifyNurseNewOrder } from "@/lib/notifications";
+import { requestNotifPermission } from "@/lib/notifications";
 
 const SUGGESTED_SERVICES = [
   "Perawatan Luka", "Pemasangan Infus", "Suntikan & Injeksi", "Pemantauan Vital Signs",
@@ -674,19 +674,17 @@ export default function NurseDashboard() {
     return () => { if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; } };
   }, [isOnline]);
 
-  const handleAcceptConnection = async () => {
+  const handleAutoAcceptConnection = async () => {
     if (!incomingRequest) return;
-    // Stop polling immediately so no stale state interferes
     if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; }
     const captured = { ...incomingRequest };
     setIncomingRequest(null);
     try {
       await fetch(`/api/connections/${captured.id}/accept`, { method: "PUT", credentials: "include" });
-      toast({ title: "✅ Permintaan diterima!", description: `Anda terhubung dengan ${captured.patientName}` });
+      toast({ title: "✅ Order diterima!", description: `Anda terhubung dengan ${captured.patientName}` });
     } catch {
-      toast({ title: "Gagal menerima permintaan", variant: "destructive" });
+      toast({ title: "Gagal menerima order", variant: "destructive" });
     }
-    // Navigate after React finishes processing
     setTimeout(() => {
       setLocation(`/chat?connectionId=${captured.id}&name=${encodeURIComponent(captured.patientName)}&spec=${encodeURIComponent(captured.nurseSpec)}&type=nurse`);
     }, 200);
@@ -694,41 +692,30 @@ export default function NurseDashboard() {
 
   const handleRejectConnection = async () => {
     if (!incomingRequest) return;
+    if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; }
+    const captured = { ...incomingRequest };
+    setIncomingRequest(null);
     try {
-      await fetch(`/api/connections/${incomingRequest.id}/reject`, { method: "PUT", credentials: "include" });
-      toast({ title: "Permintaan ditolak" });
-      setIncomingRequest(null);
+      await fetch(`/api/connections/${captured.id}/reject`, { method: "PUT", credentials: "include" });
+      toast({ title: "Order ditolak" });
     } catch {
-      toast({ title: "Gagal menolak permintaan", variant: "destructive" });
+      toast({ title: "Gagal menolak order", variant: "destructive" });
     }
+    setTimeout(() => {
+      incomingPollRef.current = setInterval(async () => {
+        try {
+          const res = await fetch("/api/connections/incoming", { credentials: "include" });
+          if (!res.ok) return;
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setIncomingRequest(prev => prev ?? { id: data[0].id, patientName: data[0].patientName, nurseSpec: data[0].nurseSpec });
+          } else {
+            setIncomingRequest(null);
+          }
+        } catch { }
+      }, 3000);
+    }, 500);
   };
-
-  const orderSimTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    if (!isOnline) {
-      if (orderSimTimerRef.current) clearTimeout(orderSimTimerRef.current);
-      return;
-    }
-    const PATIENT_NAMES = ["Budi Santoso", "Sari Dewi", "Ahmad Fauzi", "Rina Wulandari", "Hendra Kurniawan"];
-    const SERVICES = ["perawatan luka", "pemasangan infus", "pemantauan vital signs", "suntikan & injeksi", "perawatan pasca operasi"];
-    const scheduleNext = () => {
-      const delay = 30000 + Math.random() * 60000;
-      orderSimTimerRef.current = setTimeout(() => {
-        const name = PATIENT_NAMES[Math.floor(Math.random() * PATIENT_NAMES.length)];
-        const service = SERVICES[Math.floor(Math.random() * SERVICES.length)];
-        notifyNurseNewOrder(name, service, () => setActiveTab("list"));
-        toast({
-          title: "🔔 Order Baru Masuk!",
-          description: `${name} membutuhkan ${service}`,
-        });
-        scheduleNext();
-      }, delay);
-    };
-    scheduleNext();
-    return () => {
-      if (orderSimTimerRef.current) clearTimeout(orderSimTimerRef.current);
-    };
-  }, [isOnline]);
 
   const updateLocation = useMockableUpdateLocation();
 
@@ -765,7 +752,7 @@ export default function NurseDashboard() {
         <IncomingConnectNotif
           fromName={incomingRequest.patientName}
           fromSpec={incomingRequest.nurseSpec}
-          onAccept={handleAcceptConnection}
+          onAutoAccepted={handleAutoAcceptConnection}
           onReject={handleRejectConnection}
         />
       )}

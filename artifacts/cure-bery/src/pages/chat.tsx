@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Send, CheckCheck, ShoppingBag, X, Info, Loader2,
+  ArrowLeft, Send, CheckCheck, ShoppingBag, X, Info, Loader2, Navigation,
 } from "lucide-react";
 import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
@@ -174,6 +174,15 @@ export default function ChatPage() {
               </p>
             </div>
           </div>
+          {!isNurseMode && connectionId && (
+            <button
+              onClick={() => setLocation(`/tracking?connectionId=${connectionId}&name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`)}
+              className="w-9 h-9 rounded-full hover:bg-teal-50 flex items-center justify-center transition-colors flex-shrink-0"
+              title="Lacak Perawat"
+            >
+              <Navigation className="w-4 h-4 text-teal-600" />
+            </button>
+          )}
         </div>
       </header>
 

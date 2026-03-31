@@ -3,14 +3,10 @@ import { useLocation, useSearch } from "wouter";
 import { MapContainer, TileLayer, Marker, Polyline, Circle, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { ArrowLeft, Navigation, CheckCircle2, Clock, Phone, MessageSquare } from "lucide-react";
+import { ArrowLeft, Navigation, CheckCircle2, Clock, Phone, MessageSquare, Loader2, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { RatingModal } from "@/components/patient/rating-modal";
-import { DEFAULT_PATIENT_LOCATION } from "@/lib/dummy-data";
-
-const NURSE_START = { lat: -6.1900, lng: 106.8300 };
-const PATIENT = DEFAULT_PATIENT_LOCATION;
-const STEPS = 60;
+import { useGeolocation } from "@/hooks/use-geolocation";
 
 const nurseIcon = (heading: number) => L.divIcon({
   className: "",
@@ -47,14 +43,8 @@ const patientIcon = L.divIcon({
   iconAnchor: [18, 18],
 });
 
-function lerp(a: number, b: number, t: number) {
-  return a + (b - a) * t;
-}
-
 function calcHeading(from: { lat: number; lng: number }, to: { lat: number; lng: number }) {
-  const dLng = to.lng - from.lng;
-  const dLat = to.lat - from.lat;
-  return (Math.atan2(dLng, dLat) * 180) / Math.PI;
+  return (Math.atan2(to.lng - from.lng, to.lat - from.lat) * 180) / Math.PI;
 }
 
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -71,9 +61,7 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
 
 function AutoPan({ pos }: { pos: [number, number] }) {
   const map = useMap();
-  useEffect(() => {
-    map.panTo(pos, { animate: true, duration: 0.8 });
-  }, [pos]);
+  useEffect(() => { map.panTo(pos, { animate: true, duration: 0.8 }); }, [pos]);
   return null;
 }
 
@@ -83,52 +71,65 @@ const STAGES = [
   { label: "Tenaga medis sudah tiba! 🎉", icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50", border: "border-emerald-200" },
 ];
 
+const DEFAULT_CENTER = { lat: -6.2088, lng: 106.8456 };
+
 export default function TrackingPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
+  const connectionId = params.get("connectionId");
   const nurseName = params.get("name") ?? "Tenaga Medis";
   const nurseSpec = params.get("spec") ?? "Tenaga Medis";
 
+  const { location: gpsLocation, isGpsActive } = useGeolocation();
+  const patientPos = isGpsActive ? gpsLocation : DEFAULT_CENTER;
+
+  const [nursePos, setNursePos] = useState<{ lat: number; lng: number } | null>(null);
+  const [trail, setTrail] = useState<[number, number][]>([]);
+  const [noGps, setNoGps] = useState(false);
   const [showRating, setShowRating] = useState(false);
-  const [step, setStep] = useState(0);
-  const [nursePos, setNursePos] = useState(NURSE_START);
-  const [trail, setTrail] = useState<[number, number][]>([[NURSE_START.lat, NURSE_START.lng]]);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const arrived = step >= STEPS;
-  const stageIdx = arrived ? 2 : step > STEPS * 0.75 ? 1 : 0;
-  const stage = STAGES[stageIdx];
-  const StageIcon = stage.icon;
-
-  const remaining = arrived ? 0 : Math.ceil(((STEPS - step) / STEPS) * 12);
-  const dist = distanceKm(nursePos, PATIENT).toFixed(1);
-  const heading = calcHeading(nursePos, PATIENT);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    intervalRef.current = setInterval(() => {
-      setStep(prev => {
-        if (prev >= STEPS) {
-          clearInterval(intervalRef.current!);
-          return prev;
-        }
-        const next = prev + 1;
-        const t = next / STEPS;
-        const wiggle = Math.sin(next * 0.7) * 0.0004;
-        const newPos = {
-          lat: lerp(NURSE_START.lat, PATIENT.lat, t) + wiggle,
-          lng: lerp(NURSE_START.lng, PATIENT.lng, t) + wiggle * 0.5,
-        };
-        setNursePos(newPos);
-        setTrail(tr => [...tr, [newPos.lat, newPos.lng]]);
-        return next;
-      });
-    }, 800);
-    return () => clearInterval(intervalRef.current!);
-  }, []);
+    if (!connectionId) return;
 
-  const midLat = (NURSE_START.lat + PATIENT.lat) / 2;
-  const midLng = (NURSE_START.lng + PATIENT.lng) / 2;
+    const poll = async () => {
+      try {
+        const res = await fetch(`/api/connections/${connectionId}/nurse-location`, {
+          credentials: "include",
+          cache: "no-store",
+        });
+        if (!res.ok) { setNoGps(true); return; }
+        const data = await res.json();
+        if (data.lat && data.lng) {
+          setNoGps(false);
+          setNursePos({ lat: data.lat, lng: data.lng });
+          setTrail(prev => {
+            const last = prev[prev.length - 1];
+            if (last && last[0] === data.lat && last[1] === data.lng) return prev;
+            return [...prev.slice(-60), [data.lat, data.lng]];
+          });
+        }
+      } catch {
+        setNoGps(true);
+      }
+    };
+
+    poll();
+    pollRef.current = setInterval(poll, 4000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [connectionId]);
+
+  const dist = nursePos ? distanceKm(nursePos, patientPos) : null;
+  const arrived = dist !== null && dist < 0.05;
+  const stageIdx = arrived ? 2 : dist !== null && dist < 0.2 ? 1 : 0;
+  const stage = STAGES[stageIdx];
+  const StageIcon = stage.icon;
+  const heading = nursePos ? calcHeading(nursePos, patientPos) : 0;
+
+  const mapCenter: [number, number] = nursePos
+    ? [(nursePos.lat + patientPos.lat) / 2, (nursePos.lng + patientPos.lng) / 2]
+    : [patientPos.lat, patientPos.lng];
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 font-sans">
@@ -137,7 +138,7 @@ export default function TrackingPage() {
       <header className="bg-white border-b border-border/50 shadow-sm z-10 flex-shrink-0">
         <div className="px-4 h-14 flex items-center gap-3">
           <button
-            onClick={() => setLocation("/patient-dashboard")}
+            onClick={() => setLocation(connectionId ? `/chat?connectionId=${connectionId}&name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}` : "/patient-dashboard")}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-foreground" />
@@ -147,12 +148,14 @@ export default function TrackingPage() {
             <p className="text-[11px] text-muted-foreground mt-0.5">{nurseName}</p>
           </div>
           <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setLocation(`/chat?name=${encodeURIComponent(nurseName)}`)}
-              className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-blue-600 transition-colors"
-            >
-              <MessageSquare className="w-4 h-4" />
-            </button>
+            {connectionId && (
+              <button
+                onClick={() => setLocation(`/chat?connectionId=${connectionId}&name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`)}
+                className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-blue-600 transition-colors"
+              >
+                <MessageSquare className="w-4 h-4" />
+              </button>
+            )}
             <button className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center text-muted-foreground hover:text-teal-600 transition-colors">
               <Phone className="w-4 h-4" />
             </button>
@@ -168,14 +171,19 @@ export default function TrackingPage() {
           </div>
           <div className="flex-1 min-w-0">
             <p className={`text-sm font-bold ${stage.color}`}>{stage.label}</p>
-            {!arrived && (
+            {!arrived && dist !== null && (
               <p className="text-xs text-muted-foreground mt-0.5">
-                Estimasi tiba: <span className="font-semibold">{remaining} menit</span>
-                {" · "}Jarak: <span className="font-semibold">{dist} km</span>
+                Jarak: <span className="font-semibold">{dist.toFixed(2)} km</span>
+                {" · "}GPS diperbarui tiap 4 detik
+              </p>
+            )}
+            {noGps && (
+              <p className="text-xs text-amber-600 mt-0.5 flex items-center gap-1">
+                <WifiOff className="w-3 h-3" /> Menunggu GPS perawat aktif...
               </p>
             )}
           </div>
-          {!arrived && (
+          {!arrived && !noGps && nursePos && (
             <div className="flex gap-1 flex-shrink-0">
               {[0, 1, 2].map(i => (
                 <div
@@ -191,9 +199,16 @@ export default function TrackingPage() {
 
       {/* Map */}
       <div className="flex-1 relative">
+        {!nursePos && !noGps && (
+          <div className="absolute inset-0 z-[1001] flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-teal-500" />
+            <p className="text-sm text-muted-foreground font-medium">Mencari lokasi perawat...</p>
+          </div>
+        )}
+
         <MapContainer
-          center={[midLat, midLng]}
-          zoom={13}
+          center={mapCenter}
+          zoom={14}
           style={{ height: "100%", width: "100%" }}
           zoomControl={false}
         >
@@ -202,7 +217,6 @@ export default function TrackingPage() {
             url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
           />
 
-          {/* Trail line */}
           {trail.length > 1 && (
             <Polyline
               positions={trail as [number, number][]}
@@ -210,26 +224,24 @@ export default function TrackingPage() {
             />
           )}
 
-          {/* Patient pulse ring */}
           <Circle
-            center={[PATIENT.lat, PATIENT.lng]}
+            center={[patientPos.lat, patientPos.lng]}
             radius={80}
             pathOptions={{ fillColor: "#10b981", fillOpacity: 0.15, color: "#10b981", weight: 1.5 }}
           />
+          <Marker position={[patientPos.lat, patientPos.lng]} icon={patientIcon} />
 
-          {/* Patient marker */}
-          <Marker position={[PATIENT.lat, PATIENT.lng]} icon={patientIcon} />
-
-          {/* Nurse marker */}
-          <Marker
-            position={[nursePos.lat, nursePos.lng]}
-            icon={nurseIcon(arrived ? 0 : heading)}
-          />
-
-          <AutoPan pos={[nursePos.lat, nursePos.lng]} />
+          {nursePos && (
+            <>
+              <Marker
+                position={[nursePos.lat, nursePos.lng]}
+                icon={nurseIcon(arrived ? 0 : heading)}
+              />
+              <AutoPan pos={[nursePos.lat, nursePos.lng]} />
+            </>
+          )}
         </MapContainer>
 
-        {/* Legend overlay */}
         <div className="absolute bottom-4 left-4 right-4 z-[1000] pointer-events-none">
           <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg border border-border/40 px-4 py-3 flex items-center gap-4 max-w-sm mx-auto">
             <div className="flex items-center gap-2 text-xs">
@@ -241,7 +253,7 @@ export default function TrackingPage() {
               <div className="w-3 h-3 rounded-full bg-emerald-500 flex-shrink-0" />
               <span className="text-muted-foreground font-medium">Lokasi Anda</span>
             </div>
-            {!arrived && (
+            {nursePos && !arrived && (
               <>
                 <div className="w-px h-4 bg-border" />
                 <div className="flex items-center gap-2 text-xs">
@@ -254,7 +266,6 @@ export default function TrackingPage() {
         </div>
       </div>
 
-      {/* Bottom bar */}
       {arrived && (
         <div className="flex-shrink-0 bg-white border-t border-border/40 px-4 py-4">
           <div className="max-w-sm mx-auto space-y-2">

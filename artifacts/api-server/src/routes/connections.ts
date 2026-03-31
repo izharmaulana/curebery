@@ -239,4 +239,34 @@ router.put("/:id/reject", async (req, res) => {
   }
 });
 
+router.get("/:id/nurse-location", async (req, res) => {
+  try {
+    res.setHeader("Cache-Control", "no-store");
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED" });
+      return;
+    }
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    const conn = rows[0];
+    if (conn.patientUserId !== session.userId && conn.nurseUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN" }); return;
+    }
+    const nurseRows = await db
+      .select({ lat: nursesTable.lat, lng: nursesTable.lng })
+      .from(nursesTable)
+      .where(eq(nursesTable.userId, conn.nurseUserId))
+      .limit(1);
+    if (nurseRows.length === 0 || nurseRows[0].lat == null || nurseRows[0].lng == null) {
+      res.status(404).json({ error: "NO_LOCATION" }); return;
+    }
+    res.json({ lat: nurseRows[0].lat, lng: nurseRows[0].lng });
+  } catch (err) {
+    req.log.error({ err }, "Get nurse location error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
 export default router;

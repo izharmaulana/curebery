@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, X, UserCheck, Bell } from "lucide-react";
+import { X, Bell, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface IncomingConnectNotifProps {
   fromName: string;
   fromSpec: string;
-  onAccept: () => void;
+  onAutoAccepted: () => void;
   onReject: () => void;
 }
 
-const TIMEOUT_SEC = 15;
+const TIMEOUT_SEC = 10;
 
-export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }: IncomingConnectNotifProps) {
+export function IncomingConnectNotif({ fromName, fromSpec, onAutoAccepted, onReject }: IncomingConnectNotifProps) {
   const [countdown, setCountdown] = useState(TIMEOUT_SEC);
   const [visible, setVisible] = useState(false);
 
@@ -21,10 +21,13 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
   }, []);
 
   useEffect(() => {
-    if (countdown <= 0) { onReject(); return; }
+    if (countdown <= 0) {
+      onAutoAccepted();
+      return;
+    }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [countdown, onReject]);
+  }, [countdown, onAutoAccepted]);
 
   const initials = fromName.split(" ").map((n: string) => n[0]).join("").substring(0, 2);
   const progress = (countdown / TIMEOUT_SEC) * 100;
@@ -36,8 +39,8 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
       }`}
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-border/30 overflow-hidden">
-        {/* Progress bar countdown */}
-        <div className="h-1 bg-gray-100 relative">
+        {/* Progress bar countdown (drains = auto accept) */}
+        <div className="h-1.5 bg-gray-100 relative">
           <div
             className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-1000 ease-linear"
             style={{ width: `${progress}%` }}
@@ -45,7 +48,6 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
         </div>
 
         <div className="px-4 py-3.5 flex items-start gap-3">
-          {/* Icon/badge */}
           <div className="relative flex-shrink-0">
             <div className="w-11 h-11 rounded-xl bg-teal-100 flex items-center justify-center text-teal-700 font-bold text-sm">
               {initials}
@@ -57,36 +59,32 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
 
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-wide mb-0.5">
-              Permintaan Klien Baru
+              Order Baru Masuk 🔔
             </p>
             <p className="text-sm font-bold text-foreground leading-tight">
-              Ada klien ingin terhubung! 🔗
+              <span className="font-semibold">{fromName.split(" ")[0]}</span> membutuhkan bantuan!
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              <span className="font-semibold text-foreground">{fromName.split(" ")[0]}</span>
-              {" "}({fromSpec}) ingin berkenalan
+              {fromSpec} · Otomatis diterima dalam{" "}
+              <span className="font-bold text-teal-600">{countdown}d</span>
             </p>
           </div>
 
-          <span className="text-[10px] text-muted-foreground flex-shrink-0 mt-1">{countdown}d</span>
+          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
+            <Clock className="w-3 h-3 text-muted-foreground" />
+            <span className="text-[10px] text-muted-foreground">{countdown}d</span>
+          </div>
         </div>
 
-        {/* Buttons */}
-        <div className="px-4 pb-3.5 flex gap-2">
-          <Button
-            size="sm"
-            className="flex-1 h-9 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm"
-            onClick={onAccept}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Terima
-          </Button>
+        {/* Only Tolak button */}
+        <div className="px-4 pb-3.5">
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 h-9 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-bold rounded-xl text-sm"
+            className="w-full h-9 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-bold rounded-xl text-sm"
             onClick={onReject}
           >
-            <X className="w-3.5 h-3.5 mr-1.5" /> Tolak
+            <X className="w-3.5 h-3.5 mr-1.5" /> Tolak Order
           </Button>
         </div>
       </div>
