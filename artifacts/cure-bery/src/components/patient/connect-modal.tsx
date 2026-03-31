@@ -2,14 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { Button } from "@/components/ui/button";
-import { X, Phone, CheckCircle2, Loader2, Star, MapPin, XCircle } from "lucide-react";
+import { X, Phone, CheckCircle2, Loader2, Star, MapPin, XCircle, LogIn } from "lucide-react";
 
 interface ConnectModalProps {
   nurse: NursePublicProfile;
   onClose: () => void;
 }
 
-type Stage = "idle" | "requesting" | "waiting" | "accepted" | "rejected" | "error";
+type Stage = "idle" | "requesting" | "waiting" | "accepted" | "rejected" | "error" | "need-login";
 
 export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
   const [, setLocation] = useLocation();
@@ -64,6 +64,11 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
       });
       const data = await res.json();
       if (!res.ok) {
+        if (res.status === 401) {
+          setErrorMsg("Sesi kamu sudah habis. Silakan login ulang.");
+          setStage("need-login");
+          return;
+        }
         setErrorMsg(data.message ?? "Gagal mengirim permintaan");
         setStage("error");
         return;
@@ -177,6 +182,16 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
                 <p className="text-xs text-muted-foreground">{errorMsg}</p>
               </div>
             )}
+
+            {stage === "need-login" && (
+              <div className="py-2 text-center space-y-2">
+                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center mx-auto">
+                  <LogIn className="w-7 h-7 text-amber-600" />
+                </div>
+                <p className="text-sm font-bold text-amber-700">Perlu login dulu</p>
+                <p className="text-xs text-muted-foreground">{errorMsg}</p>
+              </div>
+            )}
           </div>
 
           {stage === "idle" && (
@@ -191,6 +206,15 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
           {(stage === "error" || stage === "rejected") && (
             <Button className="w-full h-11 font-bold rounded-xl text-sm" variant="outline" onClick={onClose}>
               Tutup
+            </Button>
+          )}
+
+          {stage === "need-login" && (
+            <Button
+              className="w-full h-11 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-xl text-sm"
+              onClick={() => setLocation("/")}
+            >
+              <LogIn className="w-4 h-4 mr-2" /> Login Sekarang
             </Button>
           )}
 

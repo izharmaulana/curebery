@@ -27,7 +27,8 @@ export default function PatientDashboard() {
   const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
 
   const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
-  const activeUser = (user && user.role === 'patient') ? user : demoUser;
+  const isLoggedIn = !!(user && user.role === 'patient');
+  const activeUser = isLoggedIn ? user! : demoUser;
 
   const { location: gpsLocation, isGpsActive, loading: gpsLoading } = useGeolocation();
 
@@ -84,7 +85,10 @@ export default function PatientDashboard() {
                 nurse={nurse}
                 onClick={(n) => setSelectedNurseId(n.id)}
                 onViewProfile={(n) => setProfileNurse(n)}
-                onConnect={(n) => setConnectNurse(n)}
+                onConnect={(n) => {
+                  if (!isLoggedIn) { setLocation("/"); return; }
+                  setConnectNurse(n);
+                }}
               />
             </div>
           ))}
