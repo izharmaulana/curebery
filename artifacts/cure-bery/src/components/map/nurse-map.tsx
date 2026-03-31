@@ -61,13 +61,14 @@ interface NurseMapProps {
   isOnline: boolean;
   onViewProfile?: (nurse: NursePublicProfile) => void;
   onConnect?: (nurse: NursePublicProfile) => void;
+  serviceRadius?: number;
 }
 
 function jitter(val: number, amount = 0.001) {
   return val + (Math.random() - 0.5) * amount;
 }
 
-export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewProfile, onConnect }: NurseMapProps) {
+export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewProfile, onConnect, serviceRadius = 3 }: NurseMapProps) {
   const [liveNurses, setLiveNurses] = useState(nurses);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -128,7 +129,7 @@ export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewPr
           {/* Broadcast radius */}
           <Circle
             center={[location.lat, location.lng]}
-            radius={3000}
+            radius={serviceRadius * 1000}
             pathOptions={{
               fillColor: '#0d9488',
               fillOpacity: 0.04,

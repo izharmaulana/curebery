@@ -508,6 +508,7 @@ function SidebarListView({
   isOnline, onStatusChange, updatePending, onlineCount, offlineCount,
   displayNurses, filterOnlineOnly, setFilterOnlineOnly, selectedNurseId, setSelectedNurseId,
   onViewProfile, onConnect, nurseRating, nurseTotalPatients,
+  serviceRadius, setServiceRadius, radiusOptions,
 }: {
   isOnline: boolean;
   onStatusChange: (v: boolean) => void;
@@ -523,6 +524,9 @@ function SidebarListView({
   onConnect?: (n: NursePublicProfile) => void;
   nurseRating: number;
   nurseTotalPatients: number;
+  serviceRadius: number;
+  setServiceRadius: (v: number) => void;
+  radiusOptions: number[];
 }) {
   return (
     <div className="flex flex-col h-full">
@@ -549,6 +553,27 @@ function SidebarListView({
               <div className={`text-sm font-bold ${s.cls}`}>{s.val}</div>
               <div className="text-[10px] text-muted-foreground">{s.label}</div>
             </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Radius selector */}
+      <div className="px-4 py-2.5 border-b border-border/30 bg-white">
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
+          <span className="text-[11px] text-muted-foreground mr-1">Radius:</span>
+          {radiusOptions.map(r => (
+            <button
+              key={r}
+              onClick={() => setServiceRadius(r)}
+              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
+                serviceRadius === r
+                  ? "bg-teal-600 text-white shadow-sm"
+                  : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
+              }`}
+            >
+              {r}km
+            </button>
           ))}
         </div>
       </div>
@@ -618,6 +643,8 @@ export default function NurseDashboard() {
   const [selectedNurseId, setSelectedNurseId] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
+  const [serviceRadius, setServiceRadius] = useState(5);
+  const RADIUS_OPTIONS = [1, 3, 5, 10, 15];
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
   const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -632,7 +659,7 @@ export default function NurseDashboard() {
 
   const { location: gpsLocation, isGpsActive } = useGeolocation();
 
-  const { data: allNurses = [] } = useMockableNearbyNurses(gpsLocation.lat, gpsLocation.lng, 5);
+  const { data: allNurses = [] } = useMockableNearbyNurses(gpsLocation.lat, gpsLocation.lng, serviceRadius);
   const displayNurses = useMemo(() => filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses, [allNurses, filterOnlineOnly]);
   const onlineCount = allNurses.filter(n => n.isOnline).length;
   const offlineCount = allNurses.length - onlineCount;
@@ -861,6 +888,9 @@ export default function NurseDashboard() {
               onConnect={setConnectNurse}
               nurseRating={nurseRating}
               nurseTotalPatients={nurseTotalPatients}
+              serviceRadius={serviceRadius}
+              setServiceRadius={setServiceRadius}
+              radiusOptions={RADIUS_OPTIONS}
             />
           )}
           {activeTab === "profile" && (
@@ -870,7 +900,7 @@ export default function NurseDashboard() {
 
         {/* Map */}
         <main className="flex-1 relative">
-          <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
+          <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} serviceRadius={serviceRadius} />
           <div className={`absolute top-3 left-3 z-[500] flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md backdrop-blur-sm border ${isGpsActive ? "bg-white/90 border-emerald-200 text-emerald-700" : "bg-white/90 border-amber-200 text-amber-700"}`}>
             <MapPin className="w-3 h-3" />
             {isGpsActive ? "GPS Aktif" : "GPS: Default"}
@@ -910,12 +940,15 @@ export default function NurseDashboard() {
                 onConnect={setConnectNurse}
                 nurseRating={nurseRating}
                 nurseTotalPatients={nurseTotalPatients}
+                serviceRadius={serviceRadius}
+                setServiceRadius={setServiceRadius}
+                radiusOptions={RADIUS_OPTIONS}
               />
             </div>
           )}
           {activeTab === "map" && (
             <div className="h-full relative">
-              <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} />
+              <NurseMap nurses={displayNurses} location={gpsLocation} isOnline={isOnline} onViewProfile={setProfileNurse} onConnect={setConnectNurse} serviceRadius={serviceRadius} />
               {!isOnline && (
                 <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm flex flex-col items-center justify-center z-[500] text-white px-6">
                   <WifiOff className="w-10 h-10 mb-3 opacity-80" />
