@@ -140,8 +140,27 @@ router.post("/login/nurse", async (req, res) => {
       return;
     }
 
-    (req.session as any).userId = user.id;
-    (req.session as any).role = user.role;
+    const session = req.session as any;
+
+    // Jika sesi ini sebelumnya dipakai nurse lain, nonaktifkan nurse lama
+    if (session?.userId && session.userId !== user.id && session?.role === "nurse") {
+      try {
+        await db.update(nursesTable)
+          .set({ isOnline: false, updatedAt: new Date() })
+          .where(eq(nursesTable.userId, session.userId));
+        req.log.info({ prevUserId: session.userId }, "Previous nurse set offline on new login");
+      } catch (err) {
+        req.log.error({ err }, "Failed to set previous nurse offline");
+      }
+    }
+
+    // Nurse baru selalu mulai sebagai offline saat login
+    await db.update(nursesTable)
+      .set({ isOnline: false, updatedAt: new Date() })
+      .where(eq(nursesTable.userId, user.id));
+
+    session.userId = user.id;
+    session.role = user.role;
 
     const response = LoginNurseResponse.parse({
       success: true,
