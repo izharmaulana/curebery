@@ -752,7 +752,7 @@ export default function NurseDashboard() {
         <IncomingConnectNotif
           fromName={incomingRequest.patientName}
           fromSpec={incomingRequest.nurseSpec}
-          onAutoAccepted={handleAutoAcceptConnection}
+          onAccept={handleAutoAcceptConnection}
           onReject={handleRejectConnection}
         />
       )}

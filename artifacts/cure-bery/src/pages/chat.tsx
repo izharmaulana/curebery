@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Send, CheckCheck, ShoppingBag, X, Info, Loader2, Navigation,
+  ArrowLeft, Send, CheckCheck, Info, Loader2, Navigation,
 } from "lucide-react";
 import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
@@ -30,8 +29,6 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [showOrderConfirm, setShowOrderConfirm] = useState(false);
-  const [ordered, setOrdered] = useState(false);
   const [fetchError, setFetchError] = useState(false);
   const lastIdRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -114,19 +111,6 @@ export default function ChatPage() {
       }
     } catch {}
     setSending(false);
-  };
-
-  const handleOrder = () => {
-    setShowOrderConfirm(false);
-    setOrdered(true);
-    showNotification({
-      title: "Order Berhasil Dikirim!",
-      body: `${partnerName} akan segera menuju lokasi Anda`,
-      tag: "order-sent",
-    });
-    setTimeout(() => {
-      setLocation(`/tracking?name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`);
-    }, 800);
   };
 
   const handleBack = () => {
@@ -267,64 +251,13 @@ export default function ChatPage() {
         {/* Footer actions */}
         <div className="px-4 pb-3 max-w-xl mx-auto">
           {isNurseMode ? (
-            <div>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 h-10 bg-emerald-600 text-white font-bold"
-                  onClick={() => setLocation(`/tracking?name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`)}
-                >
-                  Terima Order
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 h-10 border-red-200 text-red-600"
-                  onClick={handleBack}
-                >
-                  Tolak
-                </Button>
-              </div>
-              <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
-                sambil nunggu pasien, ngobrol dulu yuk!
-              </p>
-            </div>
-          ) : ordered ? (
-            <div className="flex items-center justify-center gap-2 py-2.5 bg-emerald-50 border border-emerald-200 rounded-xl">
-              <ShoppingBag className="w-4 h-4 text-emerald-600" />
-              <span className="text-sm font-bold text-emerald-700">Order dikirim! Tenaga medis segera datang</span>
-            </div>
-          ) : showOrderConfirm ? (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 space-y-2">
-              <p className="text-sm font-bold text-amber-800 text-center">Yakin mau order sekarang?</p>
-              <div className="flex gap-2">
-                <Button variant="outline" className="flex-1 h-9 text-sm border-amber-200 text-amber-700 hover:bg-amber-50" onClick={() => setShowOrderConfirm(false)}>
-                  Batal
-                </Button>
-                <Button className="flex-1 h-9 text-sm bg-emerald-600 hover:bg-emerald-700 text-white" onClick={handleOrder}>
-                  Ya, Order!
-                </Button>
-              </div>
-            </div>
+            <p className="text-center text-[10px] text-muted-foreground italic">
+              Diskusikan dulu kebutuhan pasien sebelum berangkat
+            </p>
           ) : (
-            <>
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm"
-                  onClick={() => setShowOrderConfirm(true)}
-                >
-                  <ShoppingBag className="w-4 h-4 mr-1.5" /> Order
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 font-bold rounded-xl"
-                  onClick={handleBack}
-                >
-                  <X className="w-4 h-4 mr-1.5" /> Cancel
-                </Button>
-              </div>
-              <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
-                nego dulu di chat baru klik order ya
-              </p>
-            </>
+            <p className="text-center text-[10px] text-muted-foreground italic">
+              Nego tarif & kebutuhan dulu di sini, tekan 🧭 untuk lacak perawat
+            </p>
           )}
         </div>
       </div>

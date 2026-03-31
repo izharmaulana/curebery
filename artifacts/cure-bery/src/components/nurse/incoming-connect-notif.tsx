@@ -1,17 +1,17 @@
 import { useEffect, useState } from "react";
-import { X, Bell, Clock } from "lucide-react";
+import { CheckCircle2, X, Bell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface IncomingConnectNotifProps {
   fromName: string;
   fromSpec: string;
-  onAutoAccepted: () => void;
+  onAccept: () => void;
   onReject: () => void;
 }
 
-const TIMEOUT_SEC = 10;
+const TIMEOUT_SEC = 30;
 
-export function IncomingConnectNotif({ fromName, fromSpec, onAutoAccepted, onReject }: IncomingConnectNotifProps) {
+export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }: IncomingConnectNotifProps) {
   const [countdown, setCountdown] = useState(TIMEOUT_SEC);
   const [visible, setVisible] = useState(false);
 
@@ -21,13 +21,10 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAutoAccepted, onRej
   }, []);
 
   useEffect(() => {
-    if (countdown <= 0) {
-      onAutoAccepted();
-      return;
-    }
+    if (countdown <= 0) { onReject(); return; }
     const t = setTimeout(() => setCountdown(c => c - 1), 1000);
     return () => clearTimeout(t);
-  }, [countdown, onAutoAccepted]);
+  }, [countdown, onReject]);
 
   const initials = fromName.split(" ").map((n: string) => n[0]).join("").substring(0, 2);
   const progress = (countdown / TIMEOUT_SEC) * 100;
@@ -39,8 +36,8 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAutoAccepted, onRej
       }`}
     >
       <div className="bg-white rounded-2xl shadow-2xl border border-border/30 overflow-hidden">
-        {/* Progress bar countdown (drains = auto accept) */}
-        <div className="h-1.5 bg-gray-100 relative">
+        {/* Progress bar countdown — habis = auto tolak */}
+        <div className="h-1 bg-gray-100 relative">
           <div
             className="h-full bg-gradient-to-r from-teal-400 to-emerald-500 transition-all duration-1000 ease-linear"
             style={{ width: `${progress}%` }}
@@ -59,32 +56,36 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAutoAccepted, onRej
 
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-wide mb-0.5">
-              Order Baru Masuk 🔔
+              Permintaan Klien Baru
             </p>
             <p className="text-sm font-bold text-foreground leading-tight">
-              <span className="font-semibold">{fromName.split(" ")[0]}</span> membutuhkan bantuan!
+              Ada klien ingin terhubung! 🔗
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              {fromSpec} · Otomatis diterima dalam{" "}
-              <span className="font-bold text-teal-600">{countdown}d</span>
+              <span className="font-semibold text-foreground">{fromName.split(" ")[0]}</span>
+              {" "}({fromSpec}) ingin berkenalan
             </p>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0 mt-1">
-            <Clock className="w-3 h-3 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">{countdown}d</span>
-          </div>
+          <span className="text-[10px] text-muted-foreground flex-shrink-0 mt-1">{countdown}d</span>
         </div>
 
-        {/* Only Tolak button */}
-        <div className="px-4 pb-3.5">
+        {/* Tombol Terima + Tolak */}
+        <div className="px-4 pb-3.5 flex gap-2">
+          <Button
+            size="sm"
+            className="flex-1 h-9 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm"
+            onClick={onAccept}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5 mr-1.5" /> Terima
+          </Button>
           <Button
             size="sm"
             variant="outline"
-            className="w-full h-9 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-bold rounded-xl text-sm"
+            className="flex-1 h-9 border-red-200 text-red-500 hover:bg-red-50 hover:text-red-600 font-bold rounded-xl text-sm"
             onClick={onReject}
           >
-            <X className="w-3.5 h-3.5 mr-1.5" /> Tolak Order
+            <X className="w-3.5 h-3.5 mr-1.5" /> Tolak
           </Button>
         </div>
       </div>
