@@ -6,11 +6,17 @@ import connectPgSimple from "connect-pg-simple";
 import pg from "pg";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { initDb } from "./lib/initDb";
 
 const PgStore = connectPgSimple(session);
 
 const pgPool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
+});
+
+initDb(pgPool).catch((err) => {
+  logger.error({ err }, "DB init failed, exiting");
+  process.exit(1);
 });
 
 const app: Express = express();
