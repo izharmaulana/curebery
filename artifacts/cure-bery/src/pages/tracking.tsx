@@ -239,16 +239,18 @@ export default function TrackingPage() {
         </div>
       </div>
 
-      {/* Patient: arrived */}
-      {arrived && !isNurseMode && (
+      {/* Patient: action bar always shown */}
+      {!isNurseMode && (
         <div className="flex-shrink-0 bg-white border-t border-border/40 px-4 py-4">
           <div className="max-w-sm mx-auto space-y-2">
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-center">
-              <p className="text-sm font-bold text-emerald-700">Tenaga medis sudah di lokasi Anda!</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Silakan buka pintu dan sambut kedatangannya 🏠</p>
-            </div>
+            {arrived && (
+              <div className="bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 text-center">
+                <p className="text-sm font-bold text-emerald-700">Tenaga medis sudah di lokasi Anda!</p>
+                <p className="text-xs text-emerald-600 mt-0.5">Silakan buka pintu dan sambut kedatangannya 🏠</p>
+              </div>
+            )}
             <Button className="w-full h-10 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm" onClick={() => setShowRating(true)}>
-              Selesai & Beri Nilai ⭐
+              Selesaikan Orderan &amp; Beri Rating ⭐
             </Button>
           </div>
         </div>
