@@ -171,6 +171,43 @@ router.put("/:id/accept", async (req, res) => {
   }
 });
 
+router.put("/:id/cancel", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+
+    const id = parseInt(req.params.id);
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Koneksi tidak ditemukan" });
+      return;
+    }
+
+    if (rows[0].patientUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN", message: "Hanya pasien yang bisa membatalkan" });
+      return;
+    }
+
+    if (rows[0].status !== "pending") {
+      res.status(400).json({ error: "INVALID_STATE", message: "Hanya permintaan pending yang bisa dibatalkan" });
+      return;
+    }
+
+    await db.update(connectionsTable)
+      .set({ status: "cancelled", updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+
+    req.log.info({ connectionId: id }, "Connection cancelled by patient");
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Cancel connection error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
+  }
+});
+
 router.put("/:id/reject", async (req, res) => {
   try {
     const session = req.session as any;

@@ -9,7 +9,7 @@ interface ConnectModalProps {
   onClose: () => void;
 }
 
-type Stage = "idle" | "requesting" | "waiting" | "accepted" | "rejected" | "error" | "need-login";
+type Stage = "idle" | "requesting" | "waiting" | "cancelling" | "cancelled" | "accepted" | "rejected" | "error" | "need-login";
 
 export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
   const [, setLocation] = useLocation();
@@ -53,6 +53,19 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
     }, 2000);
   };
 
+  const handleCancel = async () => {
+    if (!connectionId) { stopPolling(); onClose(); return; }
+    setStage("cancelling");
+    stopPolling();
+    try {
+      await fetch(`/api/connections/${connectionId}/cancel`, {
+        method: "PUT",
+        credentials: "include",
+      });
+    } catch { }
+    setStage("cancelled");
+  };
+
   const handleSend = async () => {
     setStage("requesting");
     try {
@@ -91,10 +104,19 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
         onClick={e => e.stopPropagation()}
       >
         <div className="bg-gradient-to-br from-blue-500 to-blue-700 px-6 pt-6 pb-8 text-white text-center relative">
-          {(stage === "idle" || stage === "error" || stage === "rejected") && (
+          {(stage === "idle" || stage === "error" || stage === "rejected" || stage === "cancelled") && (
             <button
               onClick={onClose}
               className="absolute top-4 right-4 w-7 h-7 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center transition-colors"
+            >
+              <X className="w-3.5 h-3.5 text-white" />
+            </button>
+          )}
+          {(stage === "waiting") && (
+            <button
+              onClick={handleCancel}
+              className="absolute top-4 right-4 w-7 h-7 bg-white/20 hover:bg-red-400/60 rounded-full flex items-center justify-center transition-colors"
+              title="Batalkan permintaan"
             >
               <X className="w-3.5 h-3.5 text-white" />
             </button>
@@ -149,7 +171,24 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
                   ))}
                 </div>
                 <p className="text-sm font-semibold text-foreground">Menunggu konfirmasi dari {nurse.name.split(" ")[0]}...</p>
-                <p className="text-xs text-muted-foreground">Biasanya hanya beberapa detik</p>
+                <p className="text-xs text-muted-foreground">Tekan X atau tombol batalkan jika ingin membatalkan</p>
+              </div>
+            )}
+
+            {stage === "cancelling" && (
+              <div className="py-2 text-center space-y-2">
+                <Loader2 className="w-8 h-8 animate-spin text-red-400 mx-auto" />
+                <p className="text-sm font-semibold text-foreground">Membatalkan permintaan...</p>
+              </div>
+            )}
+
+            {stage === "cancelled" && (
+              <div className="py-2 text-center space-y-2">
+                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto">
+                  <XCircle className="w-7 h-7 text-gray-400" />
+                </div>
+                <p className="text-sm font-bold text-gray-600">Permintaan dibatalkan</p>
+                <p className="text-xs text-muted-foreground">Kamu bisa mencari perawat lain kapan saja</p>
               </div>
             )}
 
@@ -203,7 +242,17 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
             </Button>
           )}
 
-          {(stage === "error" || stage === "rejected") && (
+          {stage === "waiting" && (
+            <Button
+              className="w-full h-11 font-bold rounded-xl text-sm bg-red-50 hover:bg-red-100 text-red-600 border border-red-200"
+              variant="ghost"
+              onClick={handleCancel}
+            >
+              <X className="w-4 h-4 mr-2" /> Batalkan Permintaan
+            </Button>
+          )}
+
+          {(stage === "error" || stage === "rejected" || stage === "cancelled") && (
             <Button className="w-full h-11 font-bold rounded-xl text-sm" variant="outline" onClick={onClose}>
               Tutup
             </Button>
