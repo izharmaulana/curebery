@@ -1,100 +1,121 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  ArrowLeft, Send,
-  CheckCheck, ShoppingBag, X, Info,
+  ArrowLeft, Send, CheckCheck, ShoppingBag, X, Info, Loader2,
 } from "lucide-react";
 import { requestNotifPermission, showNotification } from "@/lib/notifications";
 
 interface Message {
   id: number;
-  from: "client" | "nurse";
+  senderRole: "patient" | "nurse";
   text: string;
-  time: string;
-  read: boolean;
+  createdAt: string;
 }
-
-const DEMO_MESSAGES: Message[] = [
-  { id: 1, from: "nurse", text: "Halo! Saya sudah terima permintaan Anda. Ada yang bisa saya bantu? 😊", time: "09:00", read: true },
-  { id: 2, from: "client", text: "Halo kak, saya butuh perawatan luka pasca operasi di rumah", time: "09:01", read: true },
-  { id: 3, from: "nurse", text: "Baik, bisa ceritakan kondisi lukanya? Sudah berapa hari pasca operasi?", time: "09:02", read: true },
-  { id: 4, from: "client", text: "Sekitar 5 hari pasca operasi appendix, luka masih basah perlu dibersihkan", time: "09:03", read: true },
-  { id: 5, from: "nurse", text: "Oke, saya bisa bantu. Untuk tarif kunjungan rumah Rp 200.000 ya, termasuk material perawatan luka 🩺", time: "09:04", read: true },
-  { id: 6, from: "client", text: "Wah bisa kurang sedikit kak? 😅", time: "09:05", read: true },
-  { id: 7, from: "nurse", text: "Boleh, Rp 175.000 sudah termasuk semua ya. Gimana? 🙏", time: "09:06", read: false },
-];
-
-const NURSE_DEMO_MESSAGES: Message[] = [
-  { id: 1, from: "nurse", text: "Heyyyy selamat bergabung di CureBery! 👋 Sama-sama nakes ya kita 😄", time: "10:00", read: true },
-  { id: 2, from: "client", text: "Hahaha iya nih! Kamu spesialis apa?", time: "10:01", read: true },
-  { id: 3, from: "nurse", text: "Aku perawat ICU, kamu?", time: "10:02", read: true },
-  { id: 4, from: "client", text: "Wah keren! Aku perawat luka, sering ketemu pasien pasca operasi 🩹", time: "10:03", read: true },
-  { id: 5, from: "nurse", text: "Oh seru banget! Pernah nggak kamu ketemu kasus luka yang susah banget nutupnya?", time: "10:04", read: true },
-  { id: 6, from: "client", text: "Sering banget 😅 biasanya pasien DM yang paling tricky", time: "10:05", read: true },
-  { id: 7, from: "nurse", text: "Bener banget! Ngobrol sambil nunggu pasien yuk, atau mau main game dulu? 🎮", time: "10:06", read: false },
-];
 
 export default function ChatPage() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const params = new URLSearchParams(search);
-  const nurseName = params.get("name") ?? "Tenaga Medis";
-  const nurseSpec = params.get("spec") ?? "Perawat Umum";
+  const connectionId = params.get("connectionId");
+  const partnerName = params.get("name") ?? "Tenaga Medis";
+  const nurseSpec = params.get("spec") ?? "Perawat";
   const isNurseMode = params.get("type") === "nurse";
 
-  const [messages, setMessages] = useState<Message[]>(isNurseMode ? NURSE_DEMO_MESSAGES : DEMO_MESSAGES);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const [showOrderConfirm, setShowOrderConfirm] = useState(false);
   const [ordered, setOrdered] = useState(false);
+  const lastIdRef = useRef(0);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+
+  const fetchMessages = useCallback(async (initial = false) => {
+    if (!connectionId) return;
+    try {
+      const url = lastIdRef.current > 0 && !initial
+        ? `/api/messages/${connectionId}?sinceId=${lastIdRef.current}`
+        : `/api/messages/${connectionId}`;
+      const res = await fetch(url, { credentials: "include" });
+      if (!res.ok) return;
+      const data: Message[] = await res.json();
+      if (data.length > 0) {
+        setMessages(prev => {
+          if (initial) return data;
+          const newMsgs = data.filter(m => !prev.some(p => p.id === m.id));
+          return newMsgs.length > 0 ? [...prev, ...newMsgs] : prev;
+        });
+        lastIdRef.current = data[data.length - 1].id;
+        if (!initial) setTimeout(scrollToBottom, 50);
+      }
+    } catch {}
+  }, [connectionId]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const now = () => {
-    const d = new Date();
-    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
-  };
-
-  const sendMessage = () => {
-    if (!input.trim()) return;
-    setMessages(prev => [...prev, {
-      id: Date.now(),
-      from: "client",
-      text: input.trim(),
-      time: now(),
-      read: false,
-    }]);
-    setInput("");
-  };
-
-  useEffect(() => {
+    if (!connectionId) return;
+    setLoading(true);
+    fetchMessages(true).then(() => {
+      setLoading(false);
+      setTimeout(scrollToBottom, 100);
+    });
     if (!isNurseMode) requestNotifPermission();
-  }, []);
+    pollRef.current = setInterval(() => fetchMessages(false), 2000);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [connectionId, fetchMessages]);
+
+  useEffect(() => { scrollToBottom(); }, [messages]);
+
+  const sendMessage = async () => {
+    if (!input.trim() || !connectionId || sending) return;
+    const text = input.trim();
+    setInput("");
+    setSending(true);
+    try {
+      const res = await fetch(`/api/messages/${connectionId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        const msg: Message = await res.json();
+        setMessages(prev => [...prev, msg]);
+        lastIdRef.current = msg.id;
+        setTimeout(scrollToBottom, 50);
+      }
+    } catch {}
+    setSending(false);
+  };
 
   const handleOrder = () => {
     setShowOrderConfirm(false);
     setOrdered(true);
     showNotification({
       title: "Order Berhasil Dikirim!",
-      body: `${nurseName} akan segera menuju lokasi Anda`,
+      body: `${partnerName} akan segera menuju lokasi Anda`,
       tag: "order-sent",
     });
     setTimeout(() => {
-      setLocation(`/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`);
+      setLocation(`/tracking?name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`);
     }, 800);
   };
 
-  const handleCancel = () => {
-    if (isNurseMode) {
-      setLocation(`/nurse-connected?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`);
-    } else {
-      setLocation("/patient-dashboard");
-    }
+  const handleBack = () => {
+    if (isNurseMode) setLocation("/nurse-dashboard");
+    else setLocation("/patient-dashboard");
+  };
+
+  const initials = partnerName.split(" ").map((n: string) => n[0]).join("").substring(0, 2).toUpperCase();
+
+  const now = (iso: string) => {
+    const d = new Date(iso);
+    return `${d.getHours().toString().padStart(2, "0")}:${d.getMinutes().toString().padStart(2, "0")}`;
   };
 
   return (
@@ -104,7 +125,7 @@ export default function ChatPage() {
       <header className="bg-white border-b border-border/50 shadow-sm z-10 flex-shrink-0">
         <div className="px-4 h-14 flex items-center gap-3">
           <button
-            onClick={handleCancel}
+            onClick={handleBack}
             className="w-8 h-8 rounded-full hover:bg-gray-100 flex items-center justify-center transition-colors"
           >
             <ArrowLeft className="w-4 h-4 text-foreground" />
@@ -112,12 +133,12 @@ export default function ChatPage() {
           <div className="flex items-center gap-3 flex-1 min-w-0">
             <div className="relative flex-shrink-0">
               <div className="w-9 h-9 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white font-bold text-sm">
-                {nurseName.split(" ").map(n => n[0]).join("").substring(0, 2)}
+                {initials}
               </div>
               <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm text-foreground leading-none truncate">{nurseName}</p>
+              <p className="font-bold text-sm text-foreground leading-none truncate">{partnerName}</p>
               <p className="text-[11px] text-emerald-600 font-medium mt-0.5">{nurseSpec} · Online</p>
             </div>
           </div>
@@ -130,34 +151,45 @@ export default function ChatPage() {
           <div className="flex justify-center">
             <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground bg-white border border-border/40 rounded-full px-3 py-1 shadow-sm">
               <Info className="w-3 h-3" />
-              {isNurseMode
-                ? "Terhubung sesama nakes! Ngobrol & berbagi pengalaman 🤝"
-                : "Sesi chat dimulai. Diskusikan kebutuhanmu dulu ya!"}
+              {isNurseMode ? "Sesi chat dengan pasien dimulai 🤝" : "Sesi chat dimulai. Diskusikan kebutuhanmu dulu!"}
             </span>
           </div>
 
-          {messages.map(msg => (
-            <div key={msg.id} className={`flex ${msg.from === "client" ? "justify-end" : "justify-start"}`}>
-              {msg.from === "nurse" && (
-                <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white text-[10px] font-bold mr-2 flex-shrink-0 mt-1">
-                  {nurseName.split(" ").map(n => n[0]).join("").substring(0, 2)}
-                </div>
-              )}
-              <div className={`max-w-[72%] ${msg.from === "client" ? "items-end" : "items-start"} flex flex-col gap-1`}>
-                <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
-                  msg.from === "client"
-                    ? "bg-blue-600 text-white rounded-br-sm"
-                    : "bg-white text-foreground border border-border/40 shadow-sm rounded-bl-sm"
-                }`}>
-                  {msg.text}
-                </div>
-                <div className={`flex items-center gap-1 text-[10px] text-muted-foreground ${msg.from === "client" ? "flex-row-reverse" : ""}`}>
-                  <span>{msg.time}</span>
-                  {msg.from === "client" && <CheckCheck className={`w-3 h-3 ${msg.read ? "text-blue-500" : "text-gray-400"}`} />}
-                </div>
-              </div>
+          {loading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
             </div>
-          ))}
+          ) : messages.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground text-sm">
+              Belum ada pesan. Mulai percakapan!
+            </div>
+          ) : (
+            messages.map(msg => {
+              const isMine = isNurseMode ? msg.senderRole === "nurse" : msg.senderRole === "patient";
+              return (
+                <div key={msg.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
+                  {!isMine && (
+                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-400 to-emerald-600 flex items-center justify-center text-white text-[10px] font-bold mr-2 flex-shrink-0 mt-1">
+                      {initials}
+                    </div>
+                  )}
+                  <div className={`max-w-[72%] flex flex-col gap-1 ${isMine ? "items-end" : "items-start"}`}>
+                    <div className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed ${
+                      isMine
+                        ? "bg-blue-600 text-white rounded-br-sm"
+                        : "bg-white text-foreground border border-border/40 shadow-sm rounded-bl-sm"
+                    }`}>
+                      {msg.text}
+                    </div>
+                    <div className={`flex items-center gap-1 text-[10px] text-muted-foreground ${isMine ? "flex-row-reverse" : ""}`}>
+                      <span>{now(msg.createdAt)}</span>
+                      {isMine && <CheckCheck className="w-3 h-3 text-blue-400" />}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
           <div ref={bottomRef} />
         </div>
       </ScrollArea>
@@ -165,7 +197,7 @@ export default function ChatPage() {
       {/* Bottom area */}
       <div className="flex-shrink-0 bg-white border-t border-border/40 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)]">
 
-        {/* Chat Input */}
+        {/* Input */}
         <div className="px-4 pt-3 pb-2 flex items-center gap-2 max-w-xl mx-auto">
           <Input
             placeholder="Ketik pesan..."
@@ -173,13 +205,14 @@ export default function ChatPage() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === "Enter" && sendMessage()}
+            disabled={sending}
           />
           <button
             onClick={sendMessage}
-            disabled={!input.trim()}
+            disabled={!input.trim() || sending}
             className="w-10 h-10 rounded-xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-200 disabled:text-gray-400 text-white flex items-center justify-center transition-colors flex-shrink-0"
           >
-            <Send className="w-4 h-4" />
+            {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
 
@@ -190,14 +223,14 @@ export default function ChatPage() {
               <div className="flex gap-2">
                 <Button
                   className="flex-1 h-10 bg-emerald-600 text-white font-bold"
-                  onClick={() => setLocation(`/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`)}
+                  onClick={() => setLocation(`/tracking?name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`)}
                 >
                   Terima Order
                 </Button>
                 <Button
                   variant="outline"
                   className="flex-1 h-10 border-red-200 text-red-600"
-                  onClick={handleCancel}
+                  onClick={handleBack}
                 >
                   Tolak
                 </Button>
@@ -235,7 +268,7 @@ export default function ChatPage() {
                 <Button
                   variant="outline"
                   className="flex-1 h-10 border-red-200 text-red-600 hover:bg-red-50 font-bold rounded-xl"
-                  onClick={handleCancel}
+                  onClick={handleBack}
                 >
                   <X className="w-4 h-4 mr-1.5" /> Cancel
                 </Button>

@@ -43,6 +43,16 @@ export const connectionsTable = pgTable("connections", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const messagesTable = pgTable("messages", {
+  id: serial("id").primaryKey(),
+  connectionId: serial("connection_id").references(() => connectionsTable.id).notNull(),
+  senderUserId: serial("sender_user_id").references(() => usersTable.id).notNull(),
+  senderRole: text("sender_role", { enum: ["patient", "nurse"] }).notNull(),
+  text: text("text").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type Message = typeof messagesTable.$inferSelect;
 export type Connection = typeof connectionsTable.$inferSelect;
 
 export const insertUserSchema = createInsertSchema(usersTable).omit({ id: true, createdAt: true });
