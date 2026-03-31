@@ -34,6 +34,7 @@ export function ConnectModal({ nurse, onClose }: ConnectModalProps) {
       }, 1200);
       return () => clearTimeout(t);
     }
+    return undefined;
   }, [stage, connectionId]);
 
   const startPolling = (connId: number) => {

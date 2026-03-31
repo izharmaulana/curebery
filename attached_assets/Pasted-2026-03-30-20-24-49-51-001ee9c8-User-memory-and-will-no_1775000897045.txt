@@ -1,0 +1,112 @@
+2026-03-30 20:24:49.51
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 20:24:49.51
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 20:40:30.29
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 20:49:27.83
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 20:49:27.83
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 20:49:27.83
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 21:36:00.30
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 21:40:02.50
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 21:40:02.50
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 21:40:02.50
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 21:57:50.31
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 22:08:02.84
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 22:08:02.84
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 22:08:02.84
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 22:08:03.19
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 22:08:03.19
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 22:08:03.19
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 22:23:11.81
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 22:43:20.31
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 23:08:59.13
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 23:08:59.13
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 23:23:11.35
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-30 23:23:13.36
+001ee9c8
+User
+Warning: connect.session() MemoryStore is not
+2026-03-30 23:23:13.36
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-30 23:23:13.36
+001ee9c8
+User
+memory, and will not scale past a single process.
+2026-03-30 23:42:05.00
+001ee9c8
+System
+artifact process exited with error error=signal: terminated artifact=artifacts/api-server
+2026-03-31 00:08:38.58
+001ee9c8
+User
+designed for a production environment, as it will leak
+2026-03-31 00:08:38.58
+001ee9c8
+User
+memory, and will not scale past a single process.
