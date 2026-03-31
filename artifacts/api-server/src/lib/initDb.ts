@@ -84,6 +84,23 @@ export async function initDb(pool: pg.Pool) {
         ADD COLUMN IF NOT EXISTS str_expiry text;
     `);
 
+    // Remove spurious sequences left from when FK columns were incorrectly serial()
+    // These cause Drizzle schema validation failures during deployment
+    await pool.query(`
+      ALTER TABLE nurses
+        ALTER COLUMN user_id DROP DEFAULT;
+      ALTER TABLE connections
+        ALTER COLUMN patient_user_id DROP DEFAULT,
+        ALTER COLUMN nurse_user_id DROP DEFAULT,
+        ALTER COLUMN nurse_profile_id DROP DEFAULT;
+      DROP SEQUENCE IF EXISTS nurses_user_id_seq;
+      DROP SEQUENCE IF EXISTS nurses_total_patients_seq;
+      DROP SEQUENCE IF EXISTS nurses_years_experience_seq;
+      DROP SEQUENCE IF EXISTS connections_patient_user_id_seq;
+      DROP SEQUENCE IF EXISTS connections_nurse_user_id_seq;
+      DROP SEQUENCE IF EXISTS connections_nurse_profile_id_seq;
+    `);
+
     await pool.query(`
       ALTER TABLE connections
         ADD COLUMN IF NOT EXISTS order_status text NOT NULL DEFAULT 'none',
