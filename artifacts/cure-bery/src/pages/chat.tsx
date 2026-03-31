@@ -44,6 +44,7 @@ export default function ChatPage() {
   const nurseName = params.get("name") ?? "Tenaga Medis";
   const nurseSpec = params.get("spec") ?? "Perawat Umum";
   const isNurseMode = params.get("type") === "nurse";
+  const isNurseToNurse = false;
 
   const [messages, setMessages] = useState<Message[]>(isNurseMode ? NURSE_DEMO_MESSAGES : DEMO_MESSAGES);
   const [input, setInput] = useState("");
@@ -71,18 +72,14 @@ export default function ChatPage() {
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    setMessages(prev => [...prev, { id: Date.now(), from: "client", text: input.trim(), time: now(), read: false }]);
+    setMessages(prev => [...prev, { 
+      id: Date.now(), 
+      from: "client", 
+      text: input.trim(), 
+      time: now(), 
+      read: false 
+    }]);
     setInput("");
-    setTimeout(() => {
-      const reply = isNurseMode
-        ? NURSE_REPLIES[replyIdx++ % NURSE_REPLIES.length]
-        : "Oke siap! Segera saya proses ya 🙏";
-      setMessages(prev => [...prev, {
-        id: Date.now() + 1, from: "nurse",
-        text: reply,
-        time: now(), read: false,
-      }]);
-    }, 1200);
   };
 
   useEffect(() => {
@@ -201,24 +198,27 @@ export default function ChatPage() {
         {/* Footer actions */}
         <div className="px-4 pb-3 max-w-xl mx-auto">
           {isNurseMode ? (
-            /* Nurse-to-nurse: Game Bareng + Tutup */
-            <div className="space-y-2">
+            <div>
               <div className="flex gap-2">
                 <Button
-                  className="flex-1 h-10 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-sm text-sm"
-                  onClick={() => setLocation(`/game-select?opponent=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`)}
+                  className="flex-1 h-10 bg-emerald-600 text-white font-bold"
+                  onClick={() =>
+                    setLocation(
+                      `/tracking?name=${encodeURIComponent(nurseName)}&spec=${encodeURIComponent(nurseSpec)}`
+                    )
+                  }
                 >
-                  <Gamepad2 className="w-4 h-4 mr-1.5" /> Main Game Bareng 🎮
+                  Terima Order
                 </Button>
                 <Button
                   variant="outline"
-                  className="h-10 px-4 border-border/60 text-muted-foreground hover:text-foreground hover:bg-gray-50 font-semibold rounded-xl text-sm"
+                  className="flex-1 h-10 border-red-200 text-red-600"
                   onClick={handleCancel}
                 >
-                  <X className="w-4 h-4 mr-1" /> Tutup
+                  Tolak
                 </Button>
               </div>
-              <p className="text-center text-[10px] text-muted-foreground italic">
+              <p className="text-center text-[10px] text-muted-foreground mt-1.5 italic">
                 sambil nunggu pasien, ngobrol dulu yuk! 😄
               </p>
             </div>
