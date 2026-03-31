@@ -239,6 +239,46 @@ router.put("/:id/reject", async (req, res) => {
   }
 });
 
+router.post("/:id/review", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const { rating, review } = req.body;
+    if (!rating || rating < 1 || rating > 5) {
+      res.status(400).json({ error: "INVALID_RATING", message: "Rating harus antara 1-5" }); return;
+    }
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    const conn = rows[0];
+    if (conn.patientUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
+    if (conn.completedAt) { res.status(400).json({ error: "ALREADY_REVIEWED" }); return; }
+
+    await db.update(connectionsTable)
+      .set({ ratingGiven: rating, reviewText: review ?? null, completedAt: new Date(), updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+
+    // Hitung rata-rata rating baru untuk perawat ini
+    const allRatings = await db
+      .select({ ratingGiven: connectionsTable.ratingGiven })
+      .from(connectionsTable)
+      .where(eq(connectionsTable.nurseUserId, conn.nurseUserId));
+
+    const validRatings = allRatings.map(r => r.ratingGiven).filter(r => r !== null) as number[];
+    if (validRatings.length > 0) {
+      const avgRating = validRatings.reduce((a, b) => a + b, 0) / validRatings.length;
+      await db.update(nursesTable)
+        .set({ rating: Math.round(avgRating * 10) / 10, updatedAt: new Date() })
+        .where(eq(nursesTable.userId, conn.nurseUserId));
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "Submit review error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
 router.put("/:id/order", async (req, res) => {
   try {
     res.setHeader("Cache-Control", "no-store");

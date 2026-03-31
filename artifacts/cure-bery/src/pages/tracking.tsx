@@ -267,7 +267,10 @@ export default function TrackingPage() {
       )}
 
       {showRating && (
-        <RatingModal nurseName={nurseName} nurseSpec={nurseSpec}
+        <RatingModal
+          nurseName={nurseName}
+          nurseSpec={nurseSpec}
+          connectionId={connectionId}
           onClose={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
           onSubmit={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
         />

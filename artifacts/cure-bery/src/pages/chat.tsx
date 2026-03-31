@@ -4,9 +4,10 @@ import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   ArrowLeft, Send, CheckCheck, Info, Loader2, Navigation,
-  MapPin, X, CheckCircle2, AlertCircle, ShoppingBag,
+  MapPin, X, CheckCircle2, AlertCircle, ShoppingBag, Star,
 } from "lucide-react";
 import { requestNotifPermission } from "@/lib/notifications";
+import { RatingModal } from "@/components/patient/rating-modal";
 
 interface Message {
   id: number;
@@ -41,6 +42,7 @@ export default function ChatPage() {
   const [orderSending, setOrderSending] = useState(false);
   const [gettingGps, setGettingGps] = useState(false);
   const [patientName, setPatientName] = useState("");
+  const [showRating, setShowRating] = useState(false);
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 
@@ -209,6 +211,7 @@ export default function ChatPage() {
   const patientOrderAccepted = !isNurseMode && orderStatus === "order_accepted";
 
   return (
+    <>
     <div className="flex flex-col h-screen w-full bg-gray-50 font-sans">
 
       {/* Header */}
@@ -400,7 +403,7 @@ export default function ChatPage() {
 
         {/* Patient: order already sent — show tracking shortcut */}
         {!isNurseMode && (orderStatus === "ordered" || orderStatus === "order_accepted") && (
-          <div className="px-4 pt-3 pb-0 max-w-xl mx-auto">
+          <div className="px-4 pt-3 pb-0 max-w-xl mx-auto space-y-2">
             <button
               onClick={() => setLocation(`/tracking?connectionId=${connectionId}&name=${encodeURIComponent(partnerName)}&spec=${encodeURIComponent(nurseSpec)}`)}
               className="w-full h-10 rounded-xl bg-gradient-to-r from-blue-500 to-teal-600 hover:from-blue-600 hover:to-teal-700 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
@@ -408,6 +411,15 @@ export default function ChatPage() {
               <Navigation className="w-4 h-4" />
               Lihat Lokasi Perawat di Peta
             </button>
+            {orderStatus === "order_accepted" && (
+              <button
+                onClick={() => setShowRating(true)}
+                className="w-full h-10 rounded-xl bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-500 hover:to-orange-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <Star className="w-4 h-4" />
+                Selesaikan Orderan &amp; Beri Rating
+              </button>
+            )}
           </div>
         )}
 
@@ -456,5 +468,16 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+
+    {showRating && (
+      <RatingModal
+        nurseName={partnerName}
+        nurseSpec={nurseSpec}
+        connectionId={connectionId}
+        onClose={() => setShowRating(false)}
+        onSubmit={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
+      />
+    )}
+    </>
   );
 }

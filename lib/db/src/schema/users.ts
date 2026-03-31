@@ -42,6 +42,9 @@ export const connectionsTable = pgTable("connections", {
   orderStatus: text("order_status").default("none").notNull(),
   patientLat: real("patient_lat"),
   patientLng: real("patient_lng"),
+  ratingGiven: real("rating_given"),
+  reviewText: text("review_text"),
+  completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

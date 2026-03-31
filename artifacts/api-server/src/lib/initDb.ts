@@ -80,7 +80,10 @@ export async function initDb(pool: pg.Pool) {
       ALTER TABLE connections
         ADD COLUMN IF NOT EXISTS order_status text NOT NULL DEFAULT 'none',
         ADD COLUMN IF NOT EXISTS patient_lat real,
-        ADD COLUMN IF NOT EXISTS patient_lng real;
+        ADD COLUMN IF NOT EXISTS patient_lng real,
+        ADD COLUMN IF NOT EXISTS rating_given real,
+        ADD COLUMN IF NOT EXISTS review_text text,
+        ADD COLUMN IF NOT EXISTS completed_at timestamp;
     `);
 
     // Reset semua perawat ke offline saat server restart (bersihkan status lama)

@@ -1,37 +1,53 @@
 import { useState } from "react";
-import { Star, X, CheckCircle2 } from "lucide-react";
+import { Star, X, CheckCircle2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
 interface RatingModalProps {
   nurseName: string;
   nurseSpec?: string;
+  connectionId?: string | null;
   onClose: () => void;
   onSubmit?: (rating: number, comment: string) => void;
 }
 
 const QUICK_LABELS = ["Luar biasa 🔥", "Ramah sekali 😊", "Tepat waktu ⏰", "Profesional 👨‍⚕️", "Sangat membantu 💪"];
 
-export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingModalProps) {
+export function RatingModal({ nurseName, nurseSpec, connectionId, onClose, onSubmit }: RatingModalProps) {
   const [hovered, setHovered] = useState(0);
   const [selected, setSelected] = useState(0);
   const [comment, setComment] = useState("");
   const [quickTags, setQuickTags] = useState<string[]>([]);
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const toggleTag = (tag: string) => {
     setQuickTags(prev => prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]);
   };
 
-  const handleSubmit = () => {
-    if (!selected) return;
+  const handleSubmit = async () => {
+    if (!selected || submitting) return;
     const fullComment = [
       ...quickTags,
       ...(comment.trim() ? [comment.trim()] : []),
     ].join(", ");
-    onSubmit?.(selected, fullComment);
-    setSubmitted(true);
-    setTimeout(onClose, 2000);
+
+    setSubmitting(true);
+    try {
+      if (connectionId) {
+        await fetch(`/api/connections/${connectionId}/review`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ rating: selected, review: fullComment || null }),
+        });
+      }
+      onSubmit?.(selected, fullComment);
+      setSubmitted(true);
+      setTimeout(onClose, 2000);
+    } catch {
+      setSubmitting(false);
+    }
   };
 
   const starLabel = ["", "Kurang memuaskan", "Cukup baik", "Baik", "Sangat baik", "Luar biasa!"][hovered || selected] || "";
@@ -40,12 +56,17 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
   if (submitted) {
     return (
       <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl w-full max-w-sm p-8 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-300">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm p-8 flex flex-col items-center gap-4 animate-in zoom-in-95 duration-300">
           <div className="w-20 h-20 rounded-full bg-emerald-100 flex items-center justify-center">
             <CheckCircle2 className="w-10 h-10 text-emerald-500" />
           </div>
-          <h3 className="text-xl font-black text-center dark:text-white">Terima kasih! 🎉</h3>
+          <h3 className="text-xl font-black text-center">Terima kasih! 🎉</h3>
           <p className="text-sm text-muted-foreground text-center">Ulasan Anda membantu tenaga medis berkembang lebih baik.</p>
+          <div className="flex">
+            {[1, 2, 3, 4, 5].map(s => (
+              <Star key={s} className={`w-7 h-7 ${s <= selected ? "fill-amber-400 text-amber-400" : "text-gray-200"}`} />
+            ))}
+          </div>
         </div>
       </div>
     );
@@ -53,9 +74,9 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
 
   return (
     <div className="fixed inset-0 z-[9999] bg-black/50 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
+      <div className="bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-300">
         {/* Header */}
-        <div className="relative bg-gradient-to-r from-primary to-teal-400 px-5 py-5 text-white">
+        <div className="relative bg-gradient-to-r from-teal-500 to-emerald-500 px-5 py-5 text-white">
           <button
             onClick={onClose}
             className="absolute top-4 right-4 w-7 h-7 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
@@ -90,7 +111,7 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
                     className={`w-9 h-9 transition-all ${
                       s <= (hovered || selected)
                         ? "fill-amber-400 text-amber-400 scale-110"
-                        : "text-gray-200 dark:text-gray-700"
+                        : "text-gray-200"
                     }`}
                   />
                 </button>
@@ -112,8 +133,8 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
                     onClick={() => toggleTag(tag)}
                     className={`text-xs font-semibold px-3 py-1.5 rounded-full border transition-all ${
                       quickTags.includes(tag)
-                        ? "bg-primary text-white border-primary shadow-sm"
-                        : "bg-gray-50 dark:bg-gray-800 text-muted-foreground border-border/50 hover:border-primary/40"
+                        ? "bg-teal-500 text-white border-teal-500 shadow-sm"
+                        : "bg-gray-50 text-muted-foreground border-border/50 hover:border-teal-400"
                     }`}
                   >
                     {tag}
@@ -122,7 +143,7 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
               </div>
               <Textarea
                 placeholder="Tuliskan pengalaman Anda... (opsional)"
-                className="resize-none text-sm rounded-xl bg-gray-50 dark:bg-gray-800 border-border/50 min-h-[70px]"
+                className="resize-none text-sm rounded-xl bg-gray-50 border-border/50 min-h-[70px]"
                 value={comment}
                 onChange={e => setComment(e.target.value)}
               />
@@ -131,15 +152,15 @@ export function RatingModal({ nurseName, nurseSpec, onClose, onSubmit }: RatingM
 
           {/* Submit */}
           <div className="flex gap-3">
-            <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={onClose}>
+            <Button variant="outline" className="flex-1 rounded-xl h-11" onClick={onClose} disabled={submitting}>
               Lewati
             </Button>
             <Button
-              className="flex-1 rounded-xl h-11 bg-gradient-to-r from-primary to-teal-400 text-white font-bold shadow-md"
-              disabled={!selected}
+              className="flex-1 rounded-xl h-11 bg-gradient-to-r from-teal-500 to-emerald-500 text-white font-bold shadow-md disabled:opacity-50"
+              disabled={!selected || submitting}
               onClick={handleSubmit}
             >
-              Kirim Ulasan
+              {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Kirim Ulasan"}
             </Button>
           </div>
         </div>
