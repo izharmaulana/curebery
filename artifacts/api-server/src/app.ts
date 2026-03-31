@@ -3,10 +3,15 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import pg from "pg";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
 const PgStore = connectPgSimple(session);
+
+const pgPool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 const app: Express = express();
 
@@ -36,8 +41,9 @@ app.set("trust proxy", 1);
 app.use(
   session({
     store: new PgStore({
-      conString: process.env.DATABASE_URL,
-      createTableIfMissing: true,
+      pool: pgPool,
+      tableName: "session",
+      createTableIfMissing: false,
     }),
     secret: process.env.SESSION_SECRET || "cureberry-secret-key-dev",
     resave: false,
