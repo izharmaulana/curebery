@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Star, MapPin, Phone, CheckCircle2, Activity,
-  Clock, Award, Stethoscope, ShieldCheck, X
+  Clock, Award, Stethoscope, ShieldCheck, X, DollarSign
 } from "lucide-react";
 
 interface NurseProfileSheetProps {
@@ -26,6 +26,8 @@ export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProf
   const totalPatients = nurse.totalPatients ?? 0;
   const phone = nurse.phone;
   const address = nurse.address;
+  const rate = nurse.rate;
+  const strExpiry = nurse.strExpiry;
 
   let services: string[] = [];
   if (nurse.services) {
@@ -113,8 +115,14 @@ export function NurseProfileSheet({ nurse, open, onClose, onConnect }: NurseProf
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <ShieldCheck className="w-4 h-4 text-teal-600 flex-shrink-0" />
-                <span className="text-muted-foreground font-mono text-xs">{nurse.strNumber}</span>
+                <span className="text-muted-foreground font-mono text-xs">{nurse.strNumber}{strExpiry ? ` · Aktif s/d ${strExpiry}` : ""}</span>
               </div>
+              {rate && (
+                <div className="flex items-center gap-3 text-sm">
+                  <DollarSign className="w-4 h-4 text-teal-600 flex-shrink-0" />
+                  <span className="text-muted-foreground font-semibold">Rp {parseInt(rate).toLocaleString("id")} / visit</span>
+                </div>
+              )}
               {phone && (
                 <div className="flex items-center gap-3 text-sm">
                   <Phone className="w-4 h-4 text-teal-600 flex-shrink-0" />

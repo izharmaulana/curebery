@@ -122,6 +122,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
   const [avatarUrl, setAvatarUrl] = useState("");
   const [isCompressing, setIsCompressing] = useState(false);
   const [strNumber, setStrNumber] = useState("");
+  const [strExpiry, setStrExpiry] = useState("");
   const [email, setEmail] = useState("");
   const [yearsExperience, setYearsExperience] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -141,6 +142,8 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
         if (data.strNumber) setStrNumber(data.strNumber);
         if (data.email) setEmail(data.email);
         if (typeof data.yearsExperience === "number") setYearsExperience(data.yearsExperience);
+        if (data.rate) setRate(data.rate);
+        if (data.strExpiry) setStrExpiry(data.strExpiry);
       })
       .catch(() => {})
       .finally(() => setIsLoadingProfile(false));
@@ -200,7 +203,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, phone, address, specialization, bio, services, avatarUrl }),
+        body: JSON.stringify({ name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry }),
       });
       if (!res.ok) throw new Error("Gagal menyimpan");
       setIsEditing(false);
@@ -411,6 +414,15 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Radius Layanan (km)</Label>
                   <Input value={radius} onChange={e => setRadius(e.target.value)} type="number" className="h-9 text-sm" />
                 </div>
+                <div className="space-y-1">
+                  <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">STR Aktif s/d (cth: Desember 2026)</Label>
+                  <Input
+                    value={strExpiry}
+                    onChange={e => setStrExpiry(e.target.value)}
+                    placeholder="Desember 2026"
+                    className="h-9 text-sm"
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Layanan Tersedia</Label>
                   {/* Selected tags */}
@@ -454,9 +466,9 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
             ) : (
               <>
                 {[
-                  { icon: DollarSign, label: "Tarif Dasar", value: `Rp ${parseInt(rate).toLocaleString("id")} / visit`, color: "bg-green-50", iconColor: "text-green-600" },
+                  { icon: DollarSign, label: "Tarif Dasar", value: `Rp ${(parseInt(rate) || 0).toLocaleString("id")} / visit`, color: "bg-green-50", iconColor: "text-green-600" },
                   { icon: MapPin, label: "Radius Layanan", value: `${radius} km dari lokasi`, color: "bg-blue-50", iconColor: "text-blue-600" },
-                  { icon: Shield, label: "Status STR", value: "Aktif s/d Desember 2026", color: "bg-purple-50", iconColor: "text-purple-600" },
+                  { icon: Shield, label: "Status STR", value: strExpiry ? `Aktif s/d ${strExpiry}` : "Belum diisi", color: "bg-purple-50", iconColor: "text-purple-600" },
                 ].map(item => (
                   <div key={item.label} className="flex items-center gap-3 px-4 py-3">
                     <div className={`w-8 h-8 rounded-lg ${item.color} flex items-center justify-center flex-shrink-0`}>

@@ -40,6 +40,8 @@ router.get("/nearby", async (req, res) => {
       phone: nursesTable.phone,
       address: nursesTable.address,
       services: nursesTable.services,
+      rate: nursesTable.rate,
+      strExpiry: nursesTable.strExpiry,
     })
     .from(nursesTable)
     .innerJoin(usersTable, eq(nursesTable.userId, usersTable.id))
@@ -90,6 +92,8 @@ router.get("/me", async (req, res) => {
         bio: nursesTable.bio,
         services: nursesTable.services,
         avatarUrl: nursesTable.avatarUrl,
+        rate: nursesTable.rate,
+        strExpiry: nursesTable.strExpiry,
         name: usersTable.name,
         email: usersTable.email,
       })
@@ -122,7 +126,7 @@ router.put("/me/profile", async (req, res) => {
       return;
     }
 
-    const { name, phone, address, specialization, bio, services, avatarUrl } = req.body;
+    const { name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry } = req.body;
 
     const nurses = await db.select().from(nursesTable).where(eq(nursesTable.userId, session.userId)).limit(1);
     if (nurses.length === 0) {
@@ -138,6 +142,8 @@ router.put("/me/profile", async (req, res) => {
         bio: bio || null,
         services: services ? JSON.stringify(services) : null,
         avatarUrl: avatarUrl || nurses[0].avatarUrl || null,
+        rate: rate != null ? String(rate) : nurses[0].rate,
+        strExpiry: strExpiry != null ? String(strExpiry) : nurses[0].strExpiry,
         updatedAt: new Date(),
       })
       .where(eq(nursesTable.userId, session.userId));

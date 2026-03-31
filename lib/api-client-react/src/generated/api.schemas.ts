@@ -68,6 +68,8 @@ export interface NursePublicProfile {
   services?: string | null;
   totalPatients?: number | null;
   yearsExperience?: number | null;
+  rate?: string | null;
+  strExpiry?: string | null;
 }
 
 export interface NurseFullProfile {

@@ -43,6 +43,8 @@ export async function initDb(pool: pg.Pool) {
         address text,
         bio text,
         services text,
+        rate text,
+        str_expiry text,
         updated_at timestamp DEFAULT now() NOT NULL
       );
     `);
@@ -74,6 +76,12 @@ export async function initDb(pool: pg.Pool) {
         text text NOT NULL,
         created_at timestamp DEFAULT now() NOT NULL
       );
+    `);
+
+    await pool.query(`
+      ALTER TABLE nurses
+        ADD COLUMN IF NOT EXISTS rate text,
+        ADD COLUMN IF NOT EXISTS str_expiry text;
     `);
 
     await pool.query(`

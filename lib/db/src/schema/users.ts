@@ -27,6 +27,8 @@ export const nursesTable = pgTable("nurses", {
   address: text("address"),
   bio: text("bio"),
   services: text("services"),
+  rate: text("rate"),
+  strExpiry: text("str_expiry"),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
