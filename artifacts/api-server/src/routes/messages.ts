@@ -29,6 +29,8 @@ router.get("/:connectionId", async (req, res) => {
       return;
     }
 
+    res.setHeader("Cache-Control", "no-store");
+
     const sinceId = req.query.sinceId ? parseInt(req.query.sinceId as string) : 0;
 
     const rows = await db

@@ -82,6 +82,8 @@ router.get("/incoming", async (req, res) => {
       return;
     }
 
+    res.setHeader("Cache-Control", "no-store");
+
     const rows = await db
       .select()
       .from(connectionsTable)
@@ -129,6 +131,7 @@ router.get("/:id", async (req, res) => {
       return;
     }
 
+    res.setHeader("Cache-Control", "no-store");
     res.json({ id: conn.id, status: conn.status, patientName: conn.patientName, nurseName: conn.nurseName, nurseSpec: conn.nurseSpec });
   } catch (err) {
     req.log.error({ err }, "Get connection error");
