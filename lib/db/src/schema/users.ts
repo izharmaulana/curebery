@@ -1,4 +1,4 @@
-import { pgTable, text, serial, boolean, real, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, real, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -13,7 +13,7 @@ export const usersTable = pgTable("users", {
 
 export const nursesTable = pgTable("nurses", {
   id: serial("id").primaryKey(),
-  userId: serial("user_id").references(() => usersTable.id).notNull(),
+  userId: integer("user_id").references(() => usersTable.id).notNull(),
   strNumber: text("str_number").notNull().unique(),
   specialization: text("specialization").notNull(),
   isOnline: boolean("is_online").default(false).notNull(),
@@ -21,8 +21,8 @@ export const nursesTable = pgTable("nurses", {
   lat: real("lat").notNull(),
   lng: real("lng").notNull(),
   avatarUrl: text("avatar_url"),
-  totalPatients: serial("total_patients"),
-  yearsExperience: serial("years_experience"),
+  totalPatients: integer("total_patients"),
+  yearsExperience: integer("years_experience"),
   phone: text("phone"),
   address: text("address"),
   bio: text("bio"),
@@ -32,9 +32,9 @@ export const nursesTable = pgTable("nurses", {
 
 export const connectionsTable = pgTable("connections", {
   id: serial("id").primaryKey(),
-  patientUserId: serial("patient_user_id").references(() => usersTable.id).notNull(),
-  nurseUserId: serial("nurse_user_id").references(() => usersTable.id).notNull(),
-  nurseProfileId: serial("nurse_profile_id").references(() => nursesTable.id).notNull(),
+  patientUserId: integer("patient_user_id").references(() => usersTable.id).notNull(),
+  nurseUserId: integer("nurse_user_id").references(() => usersTable.id).notNull(),
+  nurseProfileId: integer("nurse_profile_id").references(() => nursesTable.id).notNull(),
   status: text("status").default("pending").notNull(),
   patientName: text("patient_name").notNull(),
   nurseName: text("nurse_name").notNull(),
@@ -51,8 +51,8 @@ export const connectionsTable = pgTable("connections", {
 
 export const messagesTable = pgTable("messages", {
   id: serial("id").primaryKey(),
-  connectionId: serial("connection_id").references(() => connectionsTable.id).notNull(),
-  senderUserId: serial("sender_user_id").references(() => usersTable.id).notNull(),
+  connectionId: integer("connection_id").references(() => connectionsTable.id).notNull(),
+  senderUserId: integer("sender_user_id").references(() => usersTable.id).notNull(),
   senderRole: text("sender_role", { enum: ["patient", "nurse"] }).notNull(),
   text: text("text").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
