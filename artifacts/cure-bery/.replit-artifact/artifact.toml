@@ -22,17 +22,10 @@ BASE_PATH = "/"
 run = "pnpm --filter @workspace/cure-bery run dev"
 
 [services.production]
+serve = "static"
+publicDir = "artifacts/cure-bery/dist/public"
+build = "pnpm --filter @workspace/cure-bery run build"
 
-[services.production.build]
-args = ["pnpm", "--filter", "@workspace/cure-bery", "run", "build"]
-
-[services.production.build.env]
+[services.production.env]
 NODE_ENV = "production"
 BASE_PATH = "/"
-
-[services.production.run]
-args = ["pnpm", "--filter", "@workspace/cure-bery", "run", "serve"]
-
-[services.production.run.env]
-PORT = "8080"
-NODE_ENV = "production"
