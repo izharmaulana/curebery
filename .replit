@@ -32,3 +32,9 @@ channel = "stable-25_05"
 
 [userenv.shared]
 VITE_API_URL = "https://cure-bery-portal.replit.app"
+
+[[artifacts]]
+id = "artifacts/cure-bery"
+
+[deployment.run]
+args = ["pnpm", "--filter", "@workspace/api-server", "start"]
