@@ -94,6 +94,7 @@ router.get("/me", async (req, res) => {
         avatarUrl: nursesTable.avatarUrl,
         rate: nursesTable.rate,
         strExpiry: nursesTable.strExpiry,
+        radiusKm: nursesTable.radiusKm,
         name: usersTable.name,
         email: usersTable.email,
       })
@@ -126,7 +127,7 @@ router.put("/me/profile", async (req, res) => {
       return;
     }
 
-    const { name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry } = req.body;
+    const { name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry, radiusKm } = req.body;
 
     const nurses = await db.select().from(nursesTable).where(eq(nursesTable.userId, session.userId)).limit(1);
     if (nurses.length === 0) {
@@ -144,6 +145,7 @@ router.put("/me/profile", async (req, res) => {
         avatarUrl: avatarUrl || nurses[0].avatarUrl || null,
         rate: rate != null ? String(rate) : nurses[0].rate,
         strExpiry: strExpiry != null ? String(strExpiry) : nurses[0].strExpiry,
+        radiusKm: radiusKm != null ? parseInt(String(radiusKm)) : nurses[0].radiusKm,
         updatedAt: new Date(),
       })
       .where(eq(nursesTable.userId, session.userId));

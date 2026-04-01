@@ -81,7 +81,8 @@ export async function initDb(pool: pg.Pool) {
     await pool.query(`
       ALTER TABLE nurses
         ADD COLUMN IF NOT EXISTS rate text,
-        ADD COLUMN IF NOT EXISTS str_expiry text;
+        ADD COLUMN IF NOT EXISTS str_expiry text,
+        ADD COLUMN IF NOT EXISTS radius_km integer DEFAULT 5;
     `);
 
     // Remove spurious sequences left from when FK columns were incorrectly serial()

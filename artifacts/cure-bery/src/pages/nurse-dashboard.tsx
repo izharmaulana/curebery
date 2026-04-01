@@ -144,6 +144,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
         if (typeof data.yearsExperience === "number") setYearsExperience(data.yearsExperience);
         if (data.rate) setRate(data.rate);
         if (data.strExpiry) setStrExpiry(data.strExpiry);
+        if (data.radiusKm != null) setRadius(String(data.radiusKm));
       })
       .catch(() => {})
       .finally(() => setIsLoadingProfile(false));
@@ -203,7 +204,7 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry }),
+        body: JSON.stringify({ name, phone, address, specialization, bio, services, avatarUrl, rate, strExpiry, radiusKm: parseInt(radius) || 5 }),
       });
       if (!res.ok) throw new Error("Gagal menyimpan");
       setIsEditing(false);
