@@ -22,9 +22,8 @@ BASE_PATH = "/"
 run = "pnpm --filter @workspace/cure-bery run dev"
 
 [services.production]
-serve = "static"
-publicDir = "artifacts/cure-bery/dist/public"
-build = "pnpm --filter @workspace/cure-bery run build"
+build = "pnpm --filter @workspace/api-server run build && pnpm --filter @workspace/cure-bery run build"
+run = "pnpm --filter @workspace/api-server run start"
 
 [services.production.env]
 NODE_ENV = "production"
