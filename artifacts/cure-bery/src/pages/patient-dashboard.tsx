@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useThemeStore } from "@/store/theme-store";
-import { useMockableNearbyNurses } from "@/hooks/use-app-queries";
+import { useNearbyNurses } from "@/hooks/use-app-queries";
 import { PatientMap } from "@/components/map/patient-map";
 import { NurseCard } from "@/components/patient/nurse-card";
 import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
@@ -32,7 +32,7 @@ export default function PatientDashboard() {
 
   const { location: gpsLocation, isGpsActive, loading: gpsLoading } = useGeolocation();
 
-  const { data: nurses, isLoading, error } = useMockableNearbyNurses(
+  const { data: nurses, isLoading, error } = useNearbyNurses(
     gpsLocation.lat,
     gpsLocation.lng,
     radius

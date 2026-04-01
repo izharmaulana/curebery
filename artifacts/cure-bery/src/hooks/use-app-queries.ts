@@ -8,9 +8,8 @@ import {
   LoginRequest
 } from '@workspace/api-client-react';
 
-export function useMockableLogin(role: 'patient' | 'nurse') {
+export function useLogin(role: 'patient' | 'nurse') {
   const loginFn = role === 'patient' ? loginPatient : loginNurse;
-
   return useMutation({
     mutationFn: async (data: LoginRequest) => {
       return await loginFn(data);
@@ -18,7 +17,7 @@ export function useMockableLogin(role: 'patient' | 'nurse') {
   });
 }
 
-export function useMockableNearbyNurses(lat: number, lng: number, radius?: number) {
+export function useNearbyNurses(lat: number, lng: number, radius?: number) {
   return useQuery({
     queryKey: ['nurses', 'nearby', lat, lng, radius],
     queryFn: async () => {
@@ -33,7 +32,7 @@ export function useMockableNearbyNurses(lat: number, lng: number, radius?: numbe
   });
 }
 
-export function useMockableUpdateStatus() {
+export function useUpdateNurseStatus() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (data: { isOnline: boolean }) => {
@@ -45,10 +44,35 @@ export function useMockableUpdateStatus() {
   });
 }
 
-export function useMockableUpdateLocation() {
+export function useUpdateNurseLocation() {
   return useMutation({
     mutationFn: async (data: { lat: number, lng: number }) => {
       return await updateNurseLocation(data);
     }
+  });
+}
+
+export interface PatientConnectionHistory {
+  id: number;
+  nurseUserId: number;
+  nurseName: string | null;
+  nurseSpec: string | null;
+  status: string;
+  orderStatus: string;
+  ratingGiven: number | null;
+  reviewText: string | null;
+  createdAt: string;
+  completedAt: string | null;
+}
+
+export function usePatientHistory() {
+  return useQuery({
+    queryKey: ['patient', 'history'],
+    queryFn: async (): Promise<PatientConnectionHistory[]> => {
+      const res = await fetch('/api/connections/patient-history', { credentials: 'include' });
+      if (!res.ok) throw new Error('Gagal memuat riwayat');
+      return res.json();
+    },
+    staleTime: 30000,
   });
 }

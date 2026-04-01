@@ -74,6 +74,25 @@ router.post("/", async (req, res) => {
   }
 });
 
+router.get("/patient-history", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+    const rows = await db
+      .select()
+      .from(connectionsTable)
+      .where(eq(connectionsTable.patientUserId, session.userId))
+      .orderBy(connectionsTable.createdAt);
+    res.json(rows.reverse());
+  } catch (err) {
+    req.log.error({ err }, "Get patient history error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
+  }
+});
+
 router.get("/incoming", async (req, res) => {
   try {
     const session = req.session as any;

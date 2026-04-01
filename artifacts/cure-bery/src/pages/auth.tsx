@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth-store";
-import { useMockableLogin } from "@/hooks/use-app-queries";
+import { useLogin } from "@/hooks/use-app-queries";
 import { useToast } from "@/hooks/use-toast";
 import { HeartPulse, UserCircle2, ShieldPlus, UserPlus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,8 +23,8 @@ export default function AuthPage() {
   const [nurseEmail, setNurseEmail] = useState("perawat1@cureberry.id");
   const [nursePassword, setNursePassword] = useState("password123");
 
-  const patientLogin = useMockableLogin("patient");
-  const nurseLogin = useMockableLogin("nurse");
+  const patientLogin = useLogin("patient");
+  const nurseLogin = useLogin("nurse");
 
   const handlePatientLogin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
-import { useMockableUpdateStatus, useMockableNearbyNurses, useMockableUpdateLocation } from "@/hooks/use-app-queries";
+import { useUpdateNurseStatus, useNearbyNurses, useUpdateNurseLocation } from "@/hooks/use-app-queries";
 import { NurseMap } from "@/components/map/nurse-map";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -665,13 +665,13 @@ export default function NurseDashboard() {
   const [nurseRating, setNurseRating] = useState<number>(0);
   const [nurseTotalPatients, setNurseTotalPatients] = useState<number>(0);
 
-  const updateStatus = useMockableUpdateStatus();
+  const updateStatus = useUpdateNurseStatus();
   const demoNurse = { id: 0, name: "Demo Perawat", email: "demo@cureberry.id", role: "nurse" as const };
   const activeUser = (user && user.role === "nurse") ? user : demoNurse;
 
   const { location: gpsLocation, isGpsActive } = useGeolocation();
 
-  const { data: allNurses = [] } = useMockableNearbyNurses(gpsLocation.lat, gpsLocation.lng, serviceRadius);
+  const { data: allNurses = [] } = useNearbyNurses(gpsLocation.lat, gpsLocation.lng, serviceRadius);
   const displayNurses = useMemo(() => filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses, [allNurses, filterOnlineOnly]);
   const onlineCount = allNurses.filter(n => n.isOnline).length;
   const offlineCount = allNurses.length - onlineCount;
@@ -756,7 +756,7 @@ export default function NurseDashboard() {
     }, 500);
   };
 
-  const updateLocation = useMockableUpdateLocation();
+  const updateLocation = useUpdateNurseLocation();
 
   const handleLogout = () => { logout(); setLocation("/"); };
   const handleStatusChange = async (checked: boolean) => {
