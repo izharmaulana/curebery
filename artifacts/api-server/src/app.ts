@@ -2,26 +2,12 @@ import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
-import connectPgSimple from "connect-pg-simple";
-import pg from "pg";
 import path from "path";
 import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { initDb } from "./lib/initDb";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-const PgStore = connectPgSimple(session);
-
-const pgPool = new pg.Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-initDb(pgPool).catch((err) => {
-  logger.error({ err }, "DB init failed, exiting");
-  process.exit(1);
-});
 
 const app: Express = express();
 
@@ -50,11 +36,6 @@ app.use(express.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
 app.use(
   session({
-    store: new PgStore({
-      pool: pgPool,
-      tableName: "session",
-      createTableIfMissing: false,
-    }),
     secret: process.env.SESSION_SECRET || "cureberry-secret-key-dev",
     resave: false,
     saveUninitialized: false,

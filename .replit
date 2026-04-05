@@ -31,7 +31,23 @@ channel = "stable-25_05"
 [userenv]
 
 [userenv.shared]
-VITE_API_URL = "https://cure-bery-portal.replit.app"
+VITE_API_URL = "https://4746a546-1888-4431-b1f4-6937ef412395-00-2vom94mno1kr8.picard.replit.dev:8080"
+SUPABASE_URL = "https://sosschimpqjimvgrrjbz.supabase.co"
+SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNvc3NjaGltcHFqaW12Z3JyamJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUxNTc1NDgsImV4cCI6MjA5MDczMzU0OH0.82bks6uha6st-CIKSUmRe5u9C6PT28AGxTbKWGF_bwg"
+DATABASE_URL = "postgresql://postgres.sosschimpqjimvgrrjbz:Curebery2026@aws-1-ap-south-1.pooler.supabase.com:6543/postgres"
+PORT = "8080"
+
+[[ports]]
+localPort = 443
+externalPort = 80
+
+[[ports]]
+localPort = 5000
+externalPort = 5000
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
 
 [[artifacts]]
 id = "artifacts/cure-bery"
