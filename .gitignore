@@ -52,3 +52,5 @@ curebery_clean.sql
 .env.production
 test*.mjs
 testsupabase.mjs
+.env
+artifacts/cure-bery/.env
