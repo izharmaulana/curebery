@@ -9,7 +9,7 @@ import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { ConnectModal } from "@/components/patient/connect-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, HeartPulse, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun, Navigation } from "lucide-react";
+import { Search, HeartPulse, Stethoscope, Send, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun, Navigation } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NursePublicProfile } from "@workspace/api-client-react";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -24,7 +24,7 @@ export default function PatientDashboard() {
   const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [radius, setRadius] = useState(3);
 
-  const RADIUS_OPTIONS = [1, 3, 5, 10, 20];
+  const RADIUS_OPTIONS = [1, 3, 5, 10, 20, 50, 100, 500, 5000];
 
   const demoUser = { id: 0, name: "Demo Klien", email: "demo@cureberry.id", role: "patient" as const };
   const isLoggedIn = !!(user && user.role === 'patient');
@@ -33,8 +33,8 @@ export default function PatientDashboard() {
   const { location: gpsLocation, isGpsActive, loading: gpsLoading } = useGeolocation();
 
   const { data: nurses, isLoading, error } = useNearbyNurses(
-    gpsLocation.lat,
-    gpsLocation.lng,
+    Math.round(gpsLocation.lat * 1000) / 1000,
+    Math.round(gpsLocation.lng * 1000) / 1000,
     radius
   );
 
@@ -48,7 +48,9 @@ export default function PatientDashboard() {
 
   const { isDark, toggle: toggleTheme } = useThemeStore();
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (!window.confirm("Yakin mau keluar akun?")) return;
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     logout();
     setLocation('/');
   };
@@ -114,6 +116,9 @@ export default function PatientDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setLocation("/ai-doctor")} className="text-muted-foreground hover:text-teal-600 rounded-full" title="CureBot AI">
+              <Stethoscope className="w-5 h-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={() => setLocation("/riwayat")} className="text-muted-foreground hover:text-primary rounded-full" title="Riwayat Layanan">
               <ClipboardList className="w-5 h-5" />
             </Button>
@@ -159,25 +164,31 @@ export default function PatientDashboard() {
           <div className="flex items-center gap-1.5">
             <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
             <span className="text-[11px] text-muted-foreground mr-1">Radius:</span>
-            {RADIUS_OPTIONS.map(r => (
-              <button
-                key={r}
-                onClick={() => setRadius(r)}
-                className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
-                  radius === r
-                    ? "bg-primary text-white shadow-sm"
-                    : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
-                }`}
-              >
-                {r}km
-              </button>
-            ))}
+            <select value={radius} onChange={e => setRadius(Number(e.target.value))}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary text-white border-none outline-none cursor-pointer">
+              {RADIUS_OPTIONS.map(r => (
+                <option key={r} value={r}>{r === 5000 ? "Se-Indonesia" : `${r} km`}</option>
+              ))}
+            </select>
           </div>
         </div>
 
         <ScrollArea className="flex-1 bg-gray-50/50 dark:bg-gray-950 p-6 pt-4">
           <NurseListContent />
         </ScrollArea>
+        <div className="flex-shrink-0 bg-white border-t border-border/40 px-3 py-2">
+          <div className="flex gap-1.5 items-center">
+            <Stethoscope className="w-4 h-4 text-teal-600 flex-shrink-0" />
+            <input type="text" placeholder="Tanya Curebery AI..."
+              className="flex-1 h-8 text-xs px-3 rounded-full border border-border/60 bg-gray-50 outline-none focus:border-teal-400"
+              onKeyDown={e => { if (e.key === "Enter" && e.currentTarget.value.trim()) { sessionStorage.setItem("curebot-prefill", e.currentTarget.value.trim()); setLocation("/ai-doctor"); } }}
+            />
+            <button className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0"
+              onClick={e => { const inp = e.currentTarget.previousElementSibling as HTMLInputElement; if (inp?.value.trim()) { sessionStorage.setItem("curebot-prefill", inp.value.trim()); setLocation("/ai-doctor"); } }}>
+              <Send className="w-3 h-3 text-white" />
+            </button>
+          </div>
+        </div>
       </aside>
 
       <main className="hidden md:block flex-1 relative bg-gray-100">
@@ -213,6 +224,9 @@ export default function PatientDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-0.5">
+            <button onClick={() => setLocation("/ai-doctor")} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-teal-600 hover:bg-teal-50 transition-colors">
+              <Stethoscope className="w-4 h-4" />
+            </button>
             <button onClick={() => setLocation("/riwayat")} className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors">
               <ClipboardList className="w-4 h-4" />
             </button>
@@ -273,19 +287,12 @@ export default function PatientDashboard() {
                 <div className="flex items-center gap-1.5 flex-1 flex-wrap">
                   <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
                   <span className="text-[11px] text-muted-foreground">Radius:</span>
-                  {RADIUS_OPTIONS.map(r => (
-                    <button
-                      key={r}
-                      onClick={() => setRadius(r)}
-                      className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
-                        radius === r
-                          ? "bg-blue-600 text-white shadow-sm"
-                          : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
-                      }`}
-                    >
-                      {r}km
-                    </button>
-                  ))}
+                  <select value={radius} onChange={e => setRadius(Number(e.target.value))}
+                    className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-600 text-white border-none outline-none cursor-pointer">
+                    {RADIUS_OPTIONS.map(r => (
+                      <option key={r} value={r}>{r === 5000 ? "Se-Indonesia" : `${r} km`}</option>
+                    ))}
+                  </select>
                 </div>
                 <span className="text-xs font-bold bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full flex-shrink-0">
                   {filteredNurses.length} tersedia
@@ -298,6 +305,22 @@ export default function PatientDashboard() {
           </div>
         )}
 
+        {/* AI Bar - selalu muncul di mobile */}
+        {mobileTab === "list" && (
+          <div className="flex-shrink-0 bg-white border-t border-border/40 px-3 py-2">
+            <div className="flex gap-1.5 items-center">
+              <Stethoscope className="w-4 h-4 text-teal-600 flex-shrink-0" />
+              <input type="text" placeholder="Tanya Curebery AI..."
+                className="flex-1 h-8 text-xs px-3 rounded-full border border-border/60 bg-gray-50 outline-none focus:border-teal-400"
+                onKeyDown={e => { if (e.key === "Enter" && e.currentTarget.value.trim()) { sessionStorage.setItem("curebot-prefill", e.currentTarget.value.trim()); setLocation("/ai-doctor"); } }}
+              />
+              <button className="w-8 h-8 rounded-full bg-teal-600 flex items-center justify-center flex-shrink-0"
+                onClick={e => { const inp = e.currentTarget.previousElementSibling as HTMLInputElement; if (inp?.value.trim()) { sessionStorage.setItem("curebot-prefill", inp.value.trim()); setLocation("/ai-doctor"); } }}>
+                <Send className="w-3 h-3 text-white" />
+              </button>
+            </div>
+          </div>
+        )}
         {/* Mobile: Map Tab */}
         {mobileTab === "map" && (
           <div className="flex-1 relative">

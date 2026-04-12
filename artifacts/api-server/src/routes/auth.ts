@@ -119,7 +119,7 @@ router.post("/login/patient", async (req, res) => {
       user: { id: user.id, email: user.email, name: user.name, role: user.role },
       token: `token-${user.id}`,
     });
-    res.json(response);
+    req.session.save(() => res.json(response));
   } catch (err) {
     req.log.error({ err }, "Login patient error");
     res.status(400).json({ error: "INVALID_INPUT", message: "Data tidak valid" });

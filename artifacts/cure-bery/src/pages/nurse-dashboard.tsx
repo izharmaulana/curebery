@@ -575,19 +575,15 @@ function SidebarListView({
         <div className="flex items-center gap-1.5">
           <MapPin className="w-3 h-3 text-muted-foreground flex-shrink-0" />
           <span className="text-[11px] text-muted-foreground mr-1">Radius:</span>
-          {radiusOptions.map(r => (
-            <button
-              key={r}
-              onClick={() => setServiceRadius(r)}
-              className={`text-[11px] font-semibold px-2 py-0.5 rounded-full transition-all ${
-                serviceRadius === r
-                  ? "bg-teal-600 text-white shadow-sm"
-                  : "bg-gray-100 text-muted-foreground hover:bg-gray-200"
-              }`}
-            >
-              {r}km
-            </button>
-          ))}
+          <select
+            value={serviceRadius}
+            onChange={e => setServiceRadius(Number(e.target.value))}
+            className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-600 text-white border-none outline-none cursor-pointer"
+          >
+            {radiusOptions.map(r => (
+              <option key={r} value={r}>{r === 5000 ? "Se-Indonesia" : `${r} km`}</option>
+            ))}
+          </select>
         </div>
       </div>
 
@@ -657,7 +653,7 @@ export default function NurseDashboard() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("list");
   const [filterOnlineOnly, setFilterOnlineOnly] = useState(false);
   const [serviceRadius, setServiceRadius] = useState(5);
-  const RADIUS_OPTIONS = [1, 3, 5, 10, 15];
+  const RADIUS_OPTIONS = [1, 3, 5, 10, 15, 50, 100, 500, 5000];
   const [profileNurse, setProfileNurse] = useState<NursePublicProfile | null>(null);
   const [connectNurse, setConnectNurse] = useState<NursePublicProfile | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
@@ -672,7 +668,7 @@ export default function NurseDashboard() {
 
   const { location: gpsLocation, isGpsActive } = useGeolocation();
 
-  const { data: allNurses = [] } = useNearbyNurses(gpsLocation.lat, gpsLocation.lng, serviceRadius);
+  const { data: allNurses = [] } = useNearbyNurses(Math.round(gpsLocation.lat * 1000) / 1000, Math.round(gpsLocation.lng * 1000) / 1000, serviceRadius);
   const displayNurses = useMemo(() => filterOnlineOnly ? allNurses.filter(n => n.isOnline) : allNurses, [allNurses, filterOnlineOnly]);
   const onlineCount = allNurses.filter(n => n.isOnline).length;
   const offlineCount = allNurses.length - onlineCount;
@@ -759,7 +755,7 @@ export default function NurseDashboard() {
 
   const updateLocation = useUpdateNurseLocation();
 
-  const handleLogout = () => { logout(); setLocation("/"); };
+  const handleLogout = async () => { if (!window.confirm("Yakin mau keluar akun?")) return; await fetch("/api/auth/logout", { method: "POST", credentials: "include" }); logout(); setLocation("/"); };
   const handleStatusChange = async (checked: boolean) => {
     setIsOnline(checked);
     try {

@@ -274,7 +274,7 @@ router.post("/:id/review", async (req, res) => {
     if (conn.completedAt) { res.status(400).json({ error: "ALREADY_REVIEWED" }); return; }
 
     await db.update(connectionsTable)
-      .set({ ratingGiven: rating, reviewText: review ?? null, completedAt: new Date(), updatedAt: new Date() })
+      .set({ ratingGiven: rating, reviewText: review ?? null, completedAt: new Date(), orderStatus: "completed", updatedAt: new Date() })
       .where(eq(connectionsTable.id, id));
 
     // Hitung rata-rata rating baru untuk perawat ini
@@ -287,7 +287,7 @@ router.post("/:id/review", async (req, res) => {
     if (validRatings.length > 0) {
       const avgRating = validRatings.reduce((a, b) => a + b, 0) / validRatings.length;
       await db.update(nursesTable)
-        .set({ rating: Math.round(avgRating * 10) / 10, updatedAt: new Date() })
+        .set({ rating: Math.round(avgRating * 10) / 10, totalPatients: validRatings.length, updatedAt: new Date() })
         .where(eq(nursesTable.userId, conn.nurseUserId));
     }
 

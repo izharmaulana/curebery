@@ -5,6 +5,11 @@ import { eq } from "drizzle-orm";
 
 const router: IRouter = Router();
 
+function maskStr(str: string): string {
+  if (!str || str.length <= 4) return "xxxx";
+  return str.substring(0, 3) + "xxxx" + str.substring(str.length - 2);
+}
+
 function calcDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
   const R = 6371;
   const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -55,6 +60,7 @@ router.get("/nearby", async (req, res) => {
         return {
           ...nurse,
           avatarUrl: nurse.avatarUrl ?? undefined,
+          strNumber: maskStr(nurse.strNumber),
           distanceKm: Math.round(
             calcDistance(params.lat, params.lng, nurse.lat, nurse.lng) * 10
           ) / 10,

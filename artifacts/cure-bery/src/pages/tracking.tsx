@@ -60,6 +60,7 @@ export default function TrackingPage() {
   const [trail, setTrail] = useState<[number, number][]>([]);
   const [noGps, setNoGps] = useState(false);
   const [showRating, setShowRating] = useState(false);
+  const [orderCompleted, setOrderCompleted] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -91,6 +92,24 @@ export default function TrackingPage() {
     const interval = isNurseMode ? 8000 : 4000;
     pollRef.current = setInterval(poll, interval);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [connectionId, isNurseMode]);
+
+  // Polling order-status untuk nakes
+  useEffect(() => {
+    if (!connectionId || !isNurseMode) return;
+    const checkOrderStatus = async () => {
+      try {
+        const res = await fetch(`/api/connections/${connectionId}/order-status`, { credentials: "include", cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.orderStatus === "completed") {
+          setOrderCompleted(true);
+        }
+      } catch {}
+    };
+    checkOrderStatus();
+    const interval = setInterval(checkOrderStatus, 5000);
+    return () => clearInterval(interval);
   }, [connectionId, isNurseMode]);
 
   const dist = remotePos ? distanceKm(myPos, remotePos) : null;
@@ -257,6 +276,22 @@ export default function TrackingPage() {
       )}
 
       {/* Nurse: arrived at patient */}
+      {orderCompleted && isNurseMode && (
+        <div className="flex-shrink-0 bg-white border-t border-border/40 px-4 py-4">
+          <div className="max-w-sm mx-auto space-y-3">
+            <div className="bg-emerald-50 border border-emerald-300 rounded-xl px-4 py-4 text-center">
+              <p className="text-lg font-black text-emerald-700">🎉 Order Selesai!</p>
+              <p className="text-sm text-emerald-600 mt-1">Pasien telah menyelesaikan dan memberi penilaian layanan Anda</p>
+            </div>
+            <button
+              onClick={() => setLocation("/nurse-dashboard")}
+              className="w-full h-11 bg-teal-600 text-white font-bold rounded-xl text-sm"
+            >
+              Kembali ke Dashboard
+            </button>
+          </div>
+        </div>
+      )}
       {nurseArrived && isNurseMode && (
         <div className="flex-shrink-0 bg-white border-t border-border/40 px-4 py-4">
           <div className="max-w-sm mx-auto">

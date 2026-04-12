@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,22 @@ import { motion, AnimatePresence } from "framer-motion";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { setAuth } = useAuthStore();
+  const { setAuth, user } = useAuthStore();
+
+  // Auto redirect jika session masih aktif
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path !== "/") return;
+    fetch("/api/auth/me", { credentials: "include" })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data?.id) {
+          if (data.role === "nurse") setLocation("/nurse-dashboard");
+          else setLocation("/patient-dashboard");
+        }
+      })
+      .catch(() => {});
+  }, []);
   const { toast } = useToast();
   
   const [activeTab, setActiveTab] = useState<'patient' | 'nurse' | null>(null);

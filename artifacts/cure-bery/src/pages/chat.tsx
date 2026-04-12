@@ -43,6 +43,9 @@ export default function ChatPage() {
   const [gettingGps, setGettingGps] = useState(false);
   const [patientName, setPatientName] = useState("");
   const [showRating, setShowRating] = useState(false);
+  const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
+  const [customReason, setCustomReason] = useState("");
 
   const scrollToBottom = () => bottomRef.current?.scrollIntoView({ behavior: "smooth" });
 
@@ -384,7 +387,7 @@ export default function ChatPage() {
 
         {/* Patient: Order button row */}
         {!isNurseMode && orderStatus === "none" && (
-          <div className="px-4 pt-3 pb-0 max-w-xl mx-auto">
+          <div className="px-4 pt-3 pb-0 max-w-xl mx-auto space-y-2">
             <button
               onClick={handlePlaceOrder}
               disabled={orderSending || gettingGps}
@@ -397,6 +400,13 @@ export default function ChatPage() {
               ) : (
                 <><MapPin className="w-4 h-4" /> Order Kunjungan Rumah</>
               )}
+            </button>
+            <button
+              onClick={() => setShowCancelModal(true)}
+              className="w-full h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <X className="w-4 h-4" />
+              Batalkan & Keluar
             </button>
           </div>
         )}
@@ -411,6 +421,15 @@ export default function ChatPage() {
               <Navigation className="w-4 h-4" />
               Lihat Lokasi Perawat di Peta
             </button>
+            {orderStatus === "ordered" && (
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="w-full h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+              >
+                <X className="w-4 h-4" />
+                Batalkan Order
+              </button>
+            )}
             {orderStatus === "order_accepted" && (
               <button
                 onClick={() => setShowRating(true)}
