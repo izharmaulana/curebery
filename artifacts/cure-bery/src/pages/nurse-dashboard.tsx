@@ -684,6 +684,7 @@ export default function NurseDashboard() {
         if (!data) return;
         if (typeof data.rating === "number") setNurseRating(data.rating);
         if (typeof data.totalPatients === "number") setNurseTotalPatients(data.totalPatients);
+        if (typeof data.isOnline === "boolean") setIsOnline(data.isOnline);
       })
       .catch(() => {});
   }, []);
@@ -709,6 +710,27 @@ export default function NurseDashboard() {
     incomingPollRef.current = setInterval(poll, 3000);
     return () => { if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; } };
   }, [isOnline]);
+
+  const [cancelledNotif, setCancelledNotif] = useState<{ reason: string; key?: string } | null>(null);
+  const cancelledPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    const poll = async () => {
+      try {
+        const res = await fetch("/api/connections/nurse-active", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data?.status === "cancelled" && data?.id) {
+          const dismissedKey = "dismissed_cancel_" + data.id;
+          if (localStorage.getItem(dismissedKey)) return;
+          if (cancelledPollRef.current) clearInterval(cancelledPollRef.current);
+          setCancelledNotif({ reason: data.cancelReason || "Tidak ada alasan", key: dismissedKey });
+        }
+      } catch {}
+    };
+    cancelledPollRef.current = setInterval(poll, 3000);
+    return () => { if (cancelledPollRef.current) clearInterval(cancelledPollRef.current); };
+  }, []);
 
   const handleAutoAcceptConnection = async () => {
     if (!incomingRequest) return;
@@ -783,6 +805,18 @@ export default function NurseDashboard() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 font-sans overflow-hidden">
+      {cancelledNotif && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3 text-center">
+            <div className="text-4xl">❌</div>
+            <h3 className="font-bold text-lg">Pasien Membatalkan Sesi</h3>
+            <p className="text-sm text-muted-foreground">Alasan: <span className="font-semibold text-foreground">{cancelledNotif.reason}</span></p>
+            <button onClick={() => { if (cancelledNotif?.key) localStorage.setItem(cancelledNotif.key, "1"); setCancelledNotif(null); }} className="w-full h-10 rounded-xl bg-primary text-white font-bold text-sm">
+              OK, Mengerti
+            </button>
+          </div>
+        </div>
+      )}
 
       {incomingRequest && (
         <IncomingConnectNotif

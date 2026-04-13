@@ -44,6 +44,7 @@ export default function ChatPage() {
   const [patientName, setPatientName] = useState("");
   const [showRating, setShowRating] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showCancelledPopup, setShowCancelledPopup] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [customReason, setCustomReason] = useState("");
 
@@ -88,6 +89,26 @@ export default function ChatPage() {
       if (data.patientName) setPatientName(data.patientName);
     } catch {}
   }, [connectionId]);
+
+  // Nurse: polling untuk detect pasien cancel
+  useEffect(() => {
+    console.log("NURSE POLL CHECK:", isNurseMode, connectionId);
+    if (!isNurseMode || !connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/connections/${connectionId}`, { credentials: "include", cache: "no-store" });
+        console.log("Poll response:", res.status);
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log("Poll data:", JSON.stringify(data));
+        if (data.status === "cancelled") {
+          clearInterval(poll);
+          setShowCancelledPopup(data.cancelReason || "Tidak ada alasan");
+        }
+      } catch {}
+    }, 6000);
+    return () => clearInterval(poll);
+  }, [isNurseMode, connectionId]);
 
   useEffect(() => {
     if (!connectionId) return;
@@ -488,7 +509,63 @@ export default function ChatPage() {
       </div>
     </div>
 
-    {showRating && (
+          {showCancelledPopup && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3 text-center">
+            <div className="text-4xl">❌</div>
+            <h3 className="font-bold text-lg">Pasien Membatalkan Sesi</h3>
+            <p className="text-sm text-muted-foreground">Alasan: <span className="font-semibold text-foreground">{showCancelledPopup}</span></p>
+            <button onClick={() => { setShowCancelledPopup(null); setLocation("/nurse-dashboard"); }}
+              className="w-full h-10 rounded-xl bg-primary text-white font-bold text-sm">
+              OK, Kembali ke Dashboard
+            </button>
+          </div>
+        </div>
+      )}
+      {showCancelModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center p-4" onClick={() => setShowCancelModal(false)}>
+          <div className="bg-white rounded-2xl w-full max-w-md p-5 space-y-4" onClick={e => e.stopPropagation()}>
+            <h3 className="font-bold text-lg">Batalkan Sesi?</h3>
+            <p className="text-sm text-muted-foreground">Pilih alasan pembatalan:</p>
+            <div className="space-y-2">
+              {["Harga tidak sesuai", "Perawat terlalu jauh", "Sudah tidak butuh", "Isi sendiri"].map(r => (
+                <button key={r} onClick={() => { setCancelReason(r); setCustomReason(""); }}
+                  className={"w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all " + (cancelReason === r ? "border-red-500 bg-red-50 text-red-600" : "border-border/60 hover:bg-gray-50")}>
+                  {r}
+                </button>
+              ))}
+              {cancelReason === "Isi sendiri" && (
+                <input type="text" placeholder="Tulis alasan..." value={customReason}
+                  onChange={e => setCustomReason(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl border border-border/60 text-sm outline-none focus:border-red-400" />
+              )}
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => { setShowCancelModal(false); setCancelReason(""); setCustomReason(""); }}
+                className="flex-1 h-10 rounded-xl border border-border/60 text-sm font-semibold">
+                Kembali
+              </button>
+              <button
+                disabled={!cancelReason || (cancelReason === "Isi sendiri" && !customReason.trim())}
+                onClick={async () => {
+                  const reason = cancelReason === "Isi sendiri" ? customReason : cancelReason;
+                  await fetch("/api/connections/" + connectionId + "/cancel", {
+                    method: "PUT", credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reason })
+                  });
+
+                  setShowCancelModal(false);
+                  setLocation("/patient-dashboard");
+                }}
+                className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold">
+                Ya, Batalkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showRating && (
       <RatingModal
         nurseName={partnerName}
         nurseSpec={nurseSpec}
