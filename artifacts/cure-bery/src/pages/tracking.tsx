@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
 import { MapContainer, TileLayer, Marker, Polyline, Circle, useMap } from "react-leaflet";
+import "leaflet-routing-machine/dist/leaflet-routing-machine.css";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { ArrowLeft, Navigation, CheckCircle2, Clock, Phone, MessageSquare, Loader2, WifiOff } from "lucide-react";
@@ -36,6 +37,38 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+function RoutingMachine({ from, to }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!from || !to) return;
+    let ctrl;
+    import("leaflet-routing-machine").then(() => {
+      ctrl = L.Routing.control({
+        waypoints: [L.latLng(from[0], from[1]), L.latLng(to[0], to[1])],
+        routeWhileDragging: false,
+        showAlternatives: false,
+        fitSelectedRoutes: false,
+        lineOptions: { styles: [{ color: "#0ea5e9", weight: 5, opacity: 0.8 }], extendToWaypoints: true, missingRouteTolerance: 0 },
+        createMarker: () => null,
+        collapsible: true,
+        show: false,
+      }).addTo(map);
+    });
+    return () => { if (ctrl) map.removeControl(ctrl); };
+  }, [from[0], from[1], to[0], to[1]]);
+  return null;
+}
+
+function AutoFollow({ pos, active }: { pos: [number, number]; active: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    if (active && pos) {
+      map.setView(pos, 16, { animate: true, duration: 0.5 });
+    }
+  }, [pos[0], pos[1], active]);
+  return null;
+}
+
 function AutoPan({ pos }: { pos: [number, number] }) {
   const map = useMap();
   useEffect(() => { map.panTo(pos, { animate: true, duration: 0.8 }); }, [pos]);
@@ -59,6 +92,7 @@ export default function TrackingPage() {
   const [remotePos, setRemotePos] = useState<{ lat: number; lng: number } | null>(null);
   const [trail, setTrail] = useState<[number, number][]>([]);
   const [noGps, setNoGps] = useState(false);
+  const [autoFollow, setAutoFollow] = useState(false);
   const [showRating, setShowRating] = useState(false);
   const [orderCompleted, setOrderCompleted] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -217,6 +251,15 @@ export default function TrackingPage() {
           </div>
         )}
 
+        {/* Tombol pusatkan */}
+        <div className="absolute bottom-32 right-4 z-[1000]">
+          <button
+            onClick={() => setAutoFollow(prev => !prev)}
+            className={`w-10 h-10 rounded-full shadow-lg border flex items-center justify-center transition-colors ${autoFollow ? "bg-teal-600 border-teal-600" : "bg-white border-border/40 hover:bg-teal-50"}`}
+          >
+            <Navigation className={`w-5 h-5 ${autoFollow ? "text-white" : "text-teal-600"}`} />
+          </button>
+        </div>
         <MapContainer center={mapCenter} zoom={14} style={{ height: "100%", width: "100%" }} zoomControl={false}>
           <TileLayer attribution='&copy; OpenStreetMap contributors' url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
 
@@ -233,6 +276,8 @@ export default function TrackingPage() {
           {/* Patient/home marker (static) */}
           {staticPos && <Marker position={[staticPos.lat, staticPos.lng]} icon={homeIcon} />}
 
+          {autoFollow && <AutoFollow pos={isNurseMode ? [myPos.lat, myPos.lng] : (remotePos ? [remotePos.lat, remotePos.lng] : [myPos.lat, myPos.lng])} active={autoFollow} />
+          }
           {/* Nurse marker (moving) */}
           {movingPos && (
             <>
