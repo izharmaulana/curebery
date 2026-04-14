@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useThemeStore } from "@/store/theme-store";
@@ -9,7 +9,7 @@ import { NurseProfileSheet } from "@/components/patient/nurse-profile-sheet";
 import { ConnectModal } from "@/components/patient/connect-modal";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, HeartPulse, Stethoscope, Send, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun, Navigation } from "lucide-react";
+import { Search, HeartPulse, Stethoscope, Send, ChevronRight, LogOut, Loader2, SlidersHorizontal, MapPin, List, ClipboardList, Moon, Sun, Navigation } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { NursePublicProfile } from "@workspace/api-client-react";
 import { useGeolocation } from "@/hooks/use-geolocation";
@@ -47,6 +47,20 @@ export default function PatientDashboard() {
   }, [nurses, searchQuery]);
 
   const { isDark, toggle: toggleTheme } = useThemeStore();
+
+  const [activeConn, setActiveConn] = useState<{id: number, nurseName: string, status: string, orderStatus: string} | null>(null);
+
+  useEffect(() => {
+    fetch("/api/connections/patient-history", { credentials: "include" })
+      .then(r => r.ok ? r.json() : [])
+      .then(data => {
+        if (Array.isArray(data)) {
+          const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled");
+          if (active) setActiveConn({ id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" });
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleLogout = async () => {
     if (!window.confirm("Yakin mau keluar akun?")) return;
@@ -130,6 +144,16 @@ export default function PatientDashboard() {
             </Button>
           </div>
         </header>
+
+        {activeConn && (
+          <div onClick={() => setLocation(`/chat?connectionId=${activeConn.id}&name=${encodeURIComponent(activeConn.nurseName)}&spec=Perawat%20Umum`)} className="mx-4 mt-3 px-4 py-3 bg-teal-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm">
+            <div>
+              <p className="text-xs font-bold">Sesi Aktif dengan {activeConn.nurseName}</p>
+              <p className="text-[11px] opacity-80">Tap untuk lanjut</p>
+            </div>
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        )}
 
         <div className="px-6 pt-6 pb-4 bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-900/80">
           <h2 className="text-2xl font-display font-bold text-foreground mb-1">

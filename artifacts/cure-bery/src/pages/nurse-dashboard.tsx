@@ -711,6 +711,15 @@ export default function NurseDashboard() {
     return () => { if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; } };
   }, [isOnline]);
 
+  const [activePatientConn, setActivePatientConn] = useState<{id: number, patientName: string, status: string, orderStatus: string} | null>(null);
+
+  useEffect(() => {
+    fetch("/api/connections/nurse-accepted", { credentials: "include" })
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data?.id) setActivePatientConn(data); })
+      .catch(() => {});
+  }, []);
+
   const [cancelledNotif, setCancelledNotif] = useState<{ reason: string; key?: string } | null>(null);
   const cancelledPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -805,6 +814,16 @@ export default function NurseDashboard() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 font-sans overflow-hidden">
+      {activePatientConn && (
+        <div onClick={() => setLocation(`/chat?connectionId=${activePatientConn.id}&name=${encodeURIComponent(activePatientConn.patientName)}&spec=Perawat%20Umum&type=nurse`)}
+          className="mx-3 mt-2 px-4 py-3 bg-teal-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
+          <div>
+            <p className="text-xs font-bold">Sesi Aktif dengan {activePatientConn.patientName}</p>
+            <p className="text-[11px] opacity-80">{activePatientConn.orderStatus === "ordered" || activePatientConn.orderStatus === "order_accepted" ? "Tap untuk lihat peta" : "Tap untuk lanjut chat"}</p>
+          </div>
+          <span className="text-white text-lg">›</span>
+        </div>
+      )}
       {cancelledNotif && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3 text-center">
