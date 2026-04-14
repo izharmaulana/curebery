@@ -51,15 +51,29 @@ export default function PatientDashboard() {
   const [activeConn, setActiveConn] = useState<{id: number, nurseName: string, status: string, orderStatus: string} | null>(null);
 
   useEffect(() => {
+    if (localStorage.getItem("session_ended") === "1") {
+      localStorage.removeItem("session_ended");
+      setActiveConn(null);
+    }
+  }, []);
+
+  const checkActiveConn = () => {
     fetch("/api/connections/patient-history", { credentials: "include" })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data)) {
           const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled");
-          if (active) setActiveConn({ id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" });
+          setActiveConn(active ? { id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" } : null);
         }
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    checkActiveConn();
+    const onVisible = () => { if (document.visibilityState === "visible") checkActiveConn(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   const handleLogout = async () => {

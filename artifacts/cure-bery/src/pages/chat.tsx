@@ -571,7 +571,7 @@ export default function ChatPage() {
         nurseSpec={nurseSpec}
         connectionId={connectionId}
         onClose={() => setShowRating(false)}
-        onSubmit={() => { setShowRating(false); setLocation("/patient-dashboard"); }}
+        onSubmit={() => { setShowRating(false); localStorage.setItem("session_ended", "1"); setLocation("/patient-dashboard"); }}
       />
     )}
     </>

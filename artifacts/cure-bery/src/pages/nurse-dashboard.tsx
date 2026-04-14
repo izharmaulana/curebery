@@ -714,10 +714,16 @@ export default function NurseDashboard() {
   const [activePatientConn, setActivePatientConn] = useState<{id: number, patientName: string, status: string, orderStatus: string} | null>(null);
 
   useEffect(() => {
-    fetch("/api/connections/nurse-accepted", { credentials: "include" })
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data?.id) setActivePatientConn(data); })
-      .catch(() => {});
+    const checkConn = () => {
+      fetch("/api/connections/nurse-accepted", { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { setActivePatientConn(data?.id ? data : null); })
+        .catch(() => {});
+    };
+    checkConn();
+    const onVisible = () => { if (document.visibilityState === "visible") checkConn(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => document.removeEventListener("visibilitychange", onVisible);
   }, []);
 
   const [cancelledNotif, setCancelledNotif] = useState<{ reason: string; key?: string } | null>(null);
