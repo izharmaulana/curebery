@@ -556,7 +556,7 @@ export default function ChatPage() {
                   });
 
                   setShowCancelModal(false);
-                  setLocation("/patient-dashboard");
+                  setTimeout(() => setLocation("/patient-dashboard"), 500);
                 }}
                 className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold">
                 Ya, Batalkan
