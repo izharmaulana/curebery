@@ -128,6 +128,25 @@ export default function TrackingPage() {
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [connectionId, isNurseMode]);
 
+  // Patient: polling untuk detect nurse reject order
+  useEffect(() => {
+    if (!connectionId || isNurseMode) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/connections/${connectionId}/order-status`, { credentials: "include", cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.orderStatus === "order_rejected" && data.status === "cancelled") {
+          clearInterval(poll);
+          localStorage.setItem("session_ended", "1");
+          alert("Perawat menolak kunjungan ke rumah");
+          setLocation("/patient-dashboard");
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [connectionId, isNurseMode]);
+
   // Polling order-status untuk nakes
   useEffect(() => {
     if (!connectionId || !isNurseMode) return;

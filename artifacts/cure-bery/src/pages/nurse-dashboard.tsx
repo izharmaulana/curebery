@@ -717,13 +717,14 @@ export default function NurseDashboard() {
     const checkConn = () => {
       fetch("/api/connections/nurse-accepted", { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
-        .then(data => { setActivePatientConn(data?.id ? data : null); })
+        .then(data => { setActivePatientConn(data?.id && data?.status === "accepted" ? data : null); })
         .catch(() => {});
     };
     checkConn();
+    const connInterval = setInterval(checkConn, 3000);
     const onVisible = () => { if (document.visibilityState === "visible") checkConn(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => document.removeEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(connInterval); document.removeEventListener("visibilitychange", onVisible); };
   }, []);
 
   const [cancelledNotif, setCancelledNotif] = useState<{ reason: string; key?: string } | null>(null);
@@ -746,6 +747,16 @@ export default function NurseDashboard() {
     cancelledPollRef.current = setInterval(poll, 3000);
     return () => { if (cancelledPollRef.current) clearInterval(cancelledPollRef.current); };
   }, []);
+  const [nurseIncoming, setNurseIncoming] = useState<{ id: number; requesterName: string } | null>(null);
+  const [waitingNurse, setWaitingNurse] = useState<{ name: string } | null>(null);
+  const nurseIncomingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => {
+    if (!isOnline) { if (nurseIncomingPollRef.current) { clearInterval(nurseIncomingPollRef.current); nurseIncomingPollRef.current = null; } return; }
+    const pollNurse = async () => { try { const res = await fetch("/api/nurse-connections/incoming", { credentials: "include" }); if (!res.ok) return; const data = await res.json(); if (Array.isArray(data) && data.length > 0) { setNurseIncoming(prev => prev ?? { id: data[0].id, requesterName: data[0].requesterName }); } else { setNurseIncoming(null); } } catch {} };
+    pollNurse();
+    nurseIncomingPollRef.current = setInterval(pollNurse, 3000);
+    return () => { if (nurseIncomingPollRef.current) { clearInterval(nurseIncomingPollRef.current); nurseIncomingPollRef.current = null; } };
+  }, [isOnline]);
 
   const handleAutoAcceptConnection = async () => {
     if (!incomingRequest) return;
@@ -828,6 +839,18 @@ export default function NurseDashboard() {
             <p className="text-[11px] opacity-80">{activePatientConn.orderStatus === "ordered" || activePatientConn.orderStatus === "order_accepted" ? "Tap untuk lihat peta" : "Tap untuk lanjut chat"}</p>
           </div>
           <span className="text-white text-lg">›</span>
+        </div>
+      )}
+      {waitingNurse && (
+        <div className="mx-4 mt-2 rounded-xl bg-teal-600 text-white px-4 py-3 flex items-center justify-between shadow-lg">
+          <div><div className="text-sm font-bold">Menunggu aksi dari {waitingNurse.name}</div><div className="text-xs opacity-80">Sedang memilih Chat atau Game...</div></div>
+          <span className="text-lg animate-pulse">⏳</span>
+        </div>
+      )}
+      {nurseIncoming && (
+        <div className="mx-4 mt-2 rounded-xl bg-violet-600 text-white px-4 py-3 flex items-center justify-between shadow-lg gap-3">
+          <div><div className="text-sm font-bold">🔗 {nurseIncoming.requesterName} ingin terhubung!</div><div className="text-xs opacity-80">Sesama nakes ingin chat atau main game</div></div>
+          <div className="flex gap-2"><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/accept`, { method: "PUT", credentials: "include" }); const connId = nurseIncoming.id; const requesterName = nurseIncoming.requesterName; setNurseIncoming(null); setWaitingNurse({ name: requesterName }); const poll = setInterval(async () => { try { const r = await fetch(`/api/nurse-connections/${connId}`, { credentials: "include" }); const d = await r.json(); if (d.action && d.actionUrl) { clearInterval(poll); setWaitingNurse(null); try { const u = new URL(d.actionUrl, window.location.origin); u.searchParams.set("name", requesterName); setLocation(u.pathname + u.search); } catch { setLocation(d.actionUrl); } } } catch {} }, 2000); setTimeout(() => clearInterval(poll), 120000); }} className="bg-white text-violet-600 px-3 py-1 rounded-lg text-xs font-bold">Terima</button><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/reject`, { method: "PUT", credentials: "include" }); setNurseIncoming(null); }} className="bg-violet-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Tolak</button></div>
         </div>
       )}
       {cancelledNotif && (

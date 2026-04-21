@@ -56,14 +56,14 @@ export function IncomingConnectNotif({ fromName, fromSpec, onAccept, onReject }:
 
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-semibold text-teal-600 uppercase tracking-wide mb-0.5">
-              Permintaan Klien Baru
+              Permintaan Pasien Baru
             </p>
             <p className="text-sm font-bold text-foreground leading-tight">
-              Ada klien ingin terhubung! 🔗
+              Ada pasien ingin menghubungi Anda! 🔔
             </p>
             <p className="text-xs text-muted-foreground mt-0.5">
               <span className="font-semibold text-foreground">{fromName.split(" ")[0]}</span>
-              {" "}({fromSpec}) ingin berkenalan
+              {" "}(Pasien) ingin terhubung dengan Anda
             </p>
           </div>
 

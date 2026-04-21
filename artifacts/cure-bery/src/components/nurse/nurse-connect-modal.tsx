@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { NursePublicProfile } from "@workspace/api-client-react";
 import { X, CheckCircle2, Gamepad2, MessageCircle, Star, MapPin, XCircle } from "lucide-react";
@@ -15,24 +15,23 @@ type Stage = "connecting" | "waiting" | "connected" | "rejected";
 export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
   const [, setLocation] = useLocation();
   const [stage, setStage] = useState<Stage>("connecting");
-  const [showNotif, setShowNotif] = useState(false);
+  const [connectionId, setConnectionId] = useState<number | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const stopPolling = () => { if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; } };
 
-  /* After 1.5 s — switch to waiting & show incoming notif */
   useEffect(() => {
-    const t = setTimeout(() => {
-      setStage("waiting");
-      setShowNotif(true);
-    }, 1500);
-    return () => clearTimeout(t);
+    const connect = async () => { try { const res = await fetch("/api/nurse-connections", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ nurseProfileId: nurse.id }) }); if (!res.ok) { setStage("rejected"); return; } const data = await res.json(); setConnectionId(data.connectionId); setStage("waiting"); pollRef.current = setInterval(async () => { try { const r = await fetch(`/api/nurse-connections/${data.connectionId}`, { credentials: "include" }); if (!r.ok) return; const d = await r.json(); if (d.status === "accepted") { stopPolling(); setStage("connected"); } else if (d.status === "rejected") { stopPolling(); setStage("rejected"); } } catch {} }, 2000); } catch { setStage("rejected"); } };
+    connect();
+    return () => stopPolling();
   }, []);
 
   const handleAccept = () => {
-    setShowNotif(false);
+    
     setStage("connected");
   };
 
   const handleReject = () => {
-    setShowNotif(false);
+    
     setStage("rejected");
     setTimeout(onClose, 2000);
   };
@@ -42,14 +41,7 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
   return (
     <>
       {/* Incoming notification — rendered outside modal overlay */}
-      {showNotif && (
-        <IncomingConnectNotif
-          fromName={nurse.name}
-          fromSpec={nurse.specialization}
-          onAccept={handleAccept}
-          onReject={handleReject}
-        />
-      )}
+
 
       <div
         className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
@@ -177,7 +169,7 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
               <div className="space-y-2">
                 <Button
                   className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm"
-                  onClick={() => setLocation(`/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse`)}
+                  onClick={async () => { if (connectionId) await fetch(`/api/nurse-connections/${connectionId}/action`, { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ action: "chat", actionUrl: `/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse&nurseChat=true` }) }); setLocation(`/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse&nurseChat=true`); }}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" /> Chat Bareng 💬
                 </Button>
@@ -202,7 +194,7 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
               <Button
                 variant="outline"
                 className="w-full h-10 border-border/60 text-muted-foreground hover:text-foreground hover:bg-gray-50 rounded-xl text-sm font-semibold"
-                onClick={() => { setShowNotif(false); onClose(); }}
+                onClick={() => { onClose(); }}
               >
                 <X className="w-4 h-4 mr-1.5" /> Batalkan Permintaan
               </Button>

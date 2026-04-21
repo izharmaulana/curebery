@@ -58,11 +58,12 @@ export default function PatientDashboard() {
   }, []);
 
   const checkActiveConn = () => {
-    fetch(`/api/connections/patient-history?t=${Date.now()}`, { credentials: "include", cache: "no-store" })
+    fetch("/api/connections/patient-history", { credentials: "include" })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data)) {
-          const active = data.find((c: any) => c.status === "accepted" && c.orderStatus !== "completed");
+          const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled");
+          console.log("BANNER DEBUG:", { dataLen: data.length, active: active ? {id: active.id, status: active.status, nurseName: active.nurseName} : null });
           setActiveConn(active ? { id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" } : null);
         }
       })
@@ -71,10 +72,10 @@ export default function PatientDashboard() {
 
   useEffect(() => {
     checkActiveConn();
-    const interval = setInterval(checkActiveConn, 5000);
+    const activeInterval = setInterval(checkActiveConn, 3000);
     const onVisible = () => { if (document.visibilityState === "visible") checkActiveConn(); };
     document.addEventListener("visibilitychange", onVisible);
-    return () => { clearInterval(interval); document.removeEventListener("visibilitychange", onVisible); };
+    return () => { clearInterval(activeInterval); document.removeEventListener("visibilitychange", onVisible); };
   }, []);
 
   const handleLogout = async () => {
@@ -278,6 +279,15 @@ export default function PatientDashboard() {
           </div>
         </header>
 
+        {activeConn && (
+          <div onClick={() => setLocation(`/chat?connectionId=${activeConn.id}&name=${encodeURIComponent(activeConn.nurseName)}&spec=Perawat%20Umum`)} className="mx-3 mt-2 px-4 py-3 bg-teal-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm">
+            <div>
+              <p className="text-xs font-bold">Sesi Aktif dengan {activeConn.nurseName}</p>
+              <p className="text-[11px] opacity-80">Tap untuk lanjut chat</p>
+            </div>
+            <ChevronRight className="w-4 h-4" />
+          </div>
+        )}
         {/* Mobile Tab Bar */}
         <div className="bg-white dark:bg-gray-900 border-b border-border/50 flex z-10">
           <button

@@ -90,6 +90,25 @@ export default function ChatPage() {
     } catch {}
   }, [connectionId]);
 
+  // Patient: polling untuk detect nurse reject order
+  useEffect(() => {
+    if (isNurseMode || !connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch(`/api/connections/${connectionId}/order-status`, { credentials: "include", cache: "no-store" });
+        if (!res.ok) return;
+        const data = await res.json();
+        console.log("PATIENT POLL:", data.orderStatus, data.status); if (data.orderStatus === "order_rejected" && data.status === "cancelled") {
+          clearInterval(poll);
+          localStorage.setItem("session_ended", "1");
+          alert("Perawat menolak kunjungan ke rumah");
+          setLocation("/patient-dashboard");
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [isNurseMode, connectionId]);
+
   // Nurse: polling untuk detect pasien cancel
   useEffect(() => {
     console.log("NURSE POLL CHECK:", isNurseMode, connectionId);
@@ -407,7 +426,7 @@ export default function ChatPage() {
       <div className="flex-shrink-0 bg-white border-t border-border/40 shadow-[0_-4px_20px_-4px_rgba(0,0,0,0.06)]">
 
         {/* Patient: Order button row */}
-        {!isNurseMode && orderStatus === "none" && (
+        {!isNurseMode && (orderStatus === "none" || orderStatus === "order_rejected") && (
           <div className="px-4 pt-3 pb-0 max-w-xl mx-auto space-y-2">
             <button
               onClick={handlePlaceOrder}
@@ -556,7 +575,8 @@ export default function ChatPage() {
                   });
 
                   setShowCancelModal(false);
-                  setTimeout(() => setLocation("/patient-dashboard"), 500);
+                  localStorage.setItem("session_ended", "1");
+                  setLocation("/patient-dashboard");
                 }}
                 className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold">
                 Ya, Batalkan
