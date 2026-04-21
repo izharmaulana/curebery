@@ -169,7 +169,7 @@ export function NurseConnectModal({ nurse, onClose }: NurseConnectModalProps) {
               <div className="space-y-2">
                 <Button
                   className="w-full h-11 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md text-sm"
-                  onClick={async () => { if (connectionId) await fetch(`/api/nurse-connections/${connectionId}/action`, { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ action: "chat", actionUrl: `/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse&nurseChat=true` }) }); setLocation(`/chat?name=${encodeURIComponent(nurse.name)}&spec=${encodeURIComponent(nurse.specialization)}&type=nurse&nurseChat=true`); }}
+                  onClick={async () => { if (connectionId) await fetch(`/api/nurse-connections/${connectionId}/action`, { method: "PUT", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ action: "chat", actionUrl: `/nurse-chat?name=${encodeURIComponent(nurse.name)}&connectionId=${connectionId}` }) }); setLocation(`/nurse-chat?connectionId=${connectionId}&name=${encodeURIComponent(nurse.name)}`); }}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" /> Chat Bareng 💬
                 </Button>

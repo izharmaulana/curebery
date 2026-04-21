@@ -9,6 +9,7 @@ import NurseDashboard from "@/pages/nurse-dashboard";
 import NurseRegisterPage from "@/pages/nurse-register";
 import PatientRegisterPage from "@/pages/patient-register";
 import ChatPage from "@/pages/chat";
+import NurseChatPage from "@/pages/nurse-chat";
 import TrackingPage from "@/pages/tracking";
 import GamePage from "@/pages/game";
 import GameQuizPage from "@/pages/game-quiz";
@@ -37,6 +38,7 @@ function Router() {
       <Route path="/nurse-register" component={NurseRegisterPage} />
       <Route path="/patient-register" component={PatientRegisterPage} />
       <Route path="/chat" component={ChatPage} />
+      <Route path="/nurse-chat" component={NurseChatPage} />
       <Route path="/tracking" component={TrackingPage} />
       <Route path="/game" component={GamePage} />
       <Route path="/game-quiz" component={GameQuizPage} />
