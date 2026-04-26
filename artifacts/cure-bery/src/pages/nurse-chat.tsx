@@ -48,23 +48,14 @@ export default function NurseChat() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950">
-      <header className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center justify-between border-b border-border/50 shadow-sm">
-        <div className="flex items-center gap-3">
-          <button onClick={() => setLocation("/nurse-dashboard")} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div>
-            <p className="font-bold text-sm">{partnerName}</p>
-            <p className="text-xs text-muted-foreground">Sesama Tenaga Medis</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setLocation(`/game-select?opponent=${encodeURIComponent(partnerName)}`)}
-          className="flex items-center gap-1.5 bg-violet-100 text-violet-600 px-3 py-1.5 rounded-full text-xs font-bold hover:bg-violet-200"
-        >
-          <Gamepad2 className="w-3.5 h-3.5" />
-          Main Bareng
+      <header className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-3 border-b border-border/50 shadow-sm">
+        <button onClick={() => setLocation("/nurse-dashboard")} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
+          <ArrowLeft className="w-5 h-5" />
         </button>
+        <div>
+          <p className="font-bold text-sm">{partnerName}</p>
+          <p className="text-xs text-muted-foreground">Sesama Tenaga Medis</p>
+        </div>
       </header>
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-2">
         {messages.map((msg: any) => (
@@ -76,6 +67,11 @@ export default function NurseChat() {
           </div>
         ))}
         <div ref={bottomRef} />
+      </div>
+      <div className="bg-white dark:bg-gray-900 px-4 py-2 flex justify-center border-t border-border/50">
+        <button onClick={() => setLocation(`/game-select?opponent=${encodeURIComponent(partnerName)}`)} className="flex items-center gap-1.5 bg-violet-100 text-violet-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-violet-200">
+          <Gamepad2 className="w-3.5 h-3.5" /> Main Bareng
+        </button>
       </div>
       <div className="bg-white dark:bg-gray-900 border-t border-border/50 px-4 py-3 flex gap-2">
         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === "Enter" && sendMessage()} placeholder="Tulis pesan..." className="flex-1 bg-gray-100 dark:bg-gray-800 rounded-full px-4 py-2 text-sm outline-none" />
