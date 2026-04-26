@@ -727,6 +727,21 @@ export default function NurseDashboard() {
     return () => { clearInterval(connInterval); document.removeEventListener("visibilitychange", onVisible); };
   }, []);
 
+  const [activeNurseConn, setActiveNurseConn] = useState<{id: number, requesterName: string, targetName: string, requesterUserId: number} | null>(null);
+  useEffect(() => {
+    const checkNurseConn = () => {
+      fetch("/api/nurse-connections/active", { credentials: "include" })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { setActiveNurseConn(data?.id && data?.status === "accepted" ? data : null); })
+        .catch(() => {});
+    };
+    checkNurseConn();
+    const nurseConnInterval = setInterval(checkNurseConn, 3000);
+    const onVisible = () => { if (document.visibilityState === "visible") checkNurseConn(); };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => { clearInterval(nurseConnInterval); document.removeEventListener("visibilitychange", onVisible); };
+  }, []);
+
   const [cancelledNotif, setCancelledNotif] = useState<{ reason: string; key?: string } | null>(null);
   const cancelledPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -837,6 +852,16 @@ export default function NurseDashboard() {
           <div>
             <p className="text-xs font-bold">Sesi Aktif dengan {activePatientConn.patientName}</p>
             <p className="text-[11px] opacity-80">{activePatientConn.orderStatus === "ordered" || activePatientConn.orderStatus === "order_accepted" ? "Tap untuk lihat peta" : "Tap untuk lanjut chat"}</p>
+          </div>
+          <span className="text-white text-lg">›</span>
+        </div>
+      )}
+      {activeNurseConn && (
+        <div onClick={() => setLocation(`/nurse-chat?connectionId=${activeNurseConn.id}&name=${encodeURIComponent(activeNurseConn.requesterUserId === activeNurseConn.requesterUserId ? activeNurseConn.targetName : activeNurseConn.requesterName)}`)}
+          className="mx-3 mt-2 px-4 py-3 bg-violet-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
+          <div>
+            <p className="text-xs font-bold">Chat Nakes dengan {activeNurseConn.targetName}</p>
+            <p className="text-[11px] opacity-80">Tap untuk lanjut chat sesama nakes</p>
           </div>
           <span className="text-white text-lg">›</span>
         </div>
