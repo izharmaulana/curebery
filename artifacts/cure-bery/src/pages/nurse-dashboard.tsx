@@ -728,6 +728,7 @@ export default function NurseDashboard() {
   }, []);
 
   const [activeNurseConn, setActiveNurseConn] = useState<{id: number, requesterName: string, targetName: string, requesterUserId: number} | null>(null);
+  const [showDisconnectNurse, setShowDisconnectNurse] = useState(false);
   useEffect(() => {
     const checkNurseConn = () => {
       fetch("/api/nurse-connections/active", { credentials: "include" })
@@ -857,11 +858,32 @@ export default function NurseDashboard() {
         </div>
       )}
       {activeNurseConn && (
-        <div onClick={() => setLocation(`/nurse-chat?connectionId=${activeNurseConn.id}&name=${encodeURIComponent(activeNurseConn.requesterUserId === activeNurseConn.requesterUserId ? activeNurseConn.targetName : activeNurseConn.requesterName)}`)}
-          className="mx-3 mt-2 px-4 py-3 bg-violet-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
-          <div>
-            <p className="text-xs font-bold">Chat Nakes dengan {activeNurseConn.targetName}</p>
-            <p className="text-[11px] opacity-80">Tap untuk lanjut chat sesama nakes</p>
+  <>
+    {showDisconnectNurse && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+        <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
+          <p className="font-bold text-center mb-2">Putuskan Koneksi?</p>
+          <p className="text-sm text-muted-foreground text-center mb-4">Apakah kamu mau putuskan hubungan dengan nakes ini?</p>
+          <div className="flex gap-2">
+            <button onClick={() => setShowDisconnectNurse(false)} className="flex-1 py-2 rounded-xl border text-sm font-semibold">Batal</button>
+            <button onClick={async () => {
+              await fetch(`/api/nurse-connections/${activeNurseConn.id}/cancel`, { method: "PUT", credentials: "include" });
+              setActiveNurseConn(null);
+              setShowDisconnectNurse(false);
+            }} className="flex-1 py-2 rounded-xl bg-red-500 text-white text-sm font-semibold">Ya, Putuskan</button>
+          </div>
+        </div>
+      </div>
+    )}
+    <div className="mx-3 mt-2 px-4 py-3 bg-violet-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
+      <div onClick={() => setLocation(`/nurse-chat?connectionId=${activeNurseConn.id}&name=${encodeURIComponent(activeNurseConn.targetName)}`)}>
+        <p className="text-xs font-bold">Chat Nakes dengan {activeNurseConn.targetName}</p>
+        <p className="text-[11px] opacity-80">Tap untuk lanjut chat sesama nakes</p>
+      </div>
+      <button onClick={(e) => { e.stopPropagation(); setShowDisconnectNurse(true); }} className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
+    </div>
+  </>
+)}
           </div>
           <span className="text-white text-lg">›</span>
         </div>
