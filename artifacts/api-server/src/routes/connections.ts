@@ -363,7 +363,7 @@ router.put("/:id/reject-order", async (req, res) => {
     if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
     if (rows[0].nurseUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
     await db.update(connectionsTable)
-      .set({ orderStatus: "order_rejected", updatedAt: new Date() })
+      .set({ orderStatus: "order_rejected", status: "cancelled", updatedAt: new Date() })
       .where(eq(connectionsTable.id, id));
     res.json({ success: true });
   } catch (err) {
@@ -386,6 +386,7 @@ router.get("/:id/order-status", async (req, res) => {
     }
     res.json({
       orderStatus: conn.orderStatus,
+      status: conn.status,
       patientName: conn.patientName,
       nurseSpec: conn.nurseSpec,
       patientLat: conn.patientLat,
