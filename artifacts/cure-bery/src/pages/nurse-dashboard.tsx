@@ -702,7 +702,12 @@ export default function NurseDashboard() {
         if (Array.isArray(data) && data.length > 0) {
           setIncomingRequest(prev => prev ?? { id: data[0].id, patientName: data[0].patientName, nurseSpec: data[0].nurseSpec });
         } else {
-          setIncomingRequest(null);
+          setIncomingRequest(prev => {
+            if (prev !== null) {
+              toast({ title: "❌ Pasien membatalkan", description: "Permintaan pasien sudah dibatalkan", variant: "destructive" });
+            }
+            return null;
+          });
         }
       } catch { }
     };
@@ -780,10 +785,16 @@ export default function NurseDashboard() {
     const captured = { ...incomingRequest };
     setIncomingRequest(null);
     try {
-      await fetch(`/api/connections/${captured.id}/accept`, { method: "PUT", credentials: "include" });
+      const res = await fetch(`/api/connections/${captured.id}/accept`, { method: "PUT", credentials: "include" });
+      const data = await res.json();
+      if (!res.ok || data.error === "INVALID_STATE") {
+        toast({ title: "❌ Pasien sudah membatalkan", description: "Permintaan ini sudah tidak berlaku", variant: "destructive" });
+        return;
+      }
       toast({ title: "✅ Order diterima!", description: `Anda terhubung dengan ${captured.patientName}` });
     } catch {
       toast({ title: "Gagal menerima order", variant: "destructive" });
+      return;
     }
     setTimeout(() => {
       setLocation(`/chat?connectionId=${captured.id}&name=${encodeURIComponent(captured.patientName)}&spec=${encodeURIComponent(captured.nurseSpec)}&type=nurse`);

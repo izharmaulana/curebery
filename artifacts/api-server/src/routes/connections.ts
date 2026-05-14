@@ -168,7 +168,7 @@ router.get("/:id", async (req, res) => {
     }
 
     res.setHeader("Cache-Control", "no-store");
-    res.json({ id: conn.id, status: conn.status, patientName: conn.patientName, nurseName: conn.nurseName, nurseSpec: conn.nurseSpec });
+    res.json({ id: conn.id, status: conn.status, patientName: conn.patientName, nurseName: conn.nurseName, nurseSpec: conn.nurseSpec, cancelReason: conn.cancelReason });
   } catch (err) {
     req.log.error({ err }, "Get connection error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
@@ -232,7 +232,7 @@ router.put("/:id/cancel", async (req, res) => {
       return;
     }
 
-    const { reason } = req.body;
+    const reason = req.body?.reason ?? null;
     await db.update(connectionsTable)
       .set({ status: "cancelled", cancelReason: reason ?? null, updatedAt: new Date() })
       .where(eq(connectionsTable.id, id));

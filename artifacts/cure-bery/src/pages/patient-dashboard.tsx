@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
 import { useAuthStore } from "@/store/auth-store";
 import { useThemeStore } from "@/store/theme-store";
@@ -50,18 +50,21 @@ export default function PatientDashboard() {
 
   const [activeConn, setActiveConn] = useState<{id: number, nurseName: string, status: string, orderStatus: string} | null>(null);
 
+  const skipBannerRef = useRef(false);
   useEffect(() => {
     if (localStorage.getItem("session_ended") === "1") {
       localStorage.removeItem("session_ended");
       setActiveConn(null);
+      skipBannerRef.current = true;
+      setTimeout(() => { skipBannerRef.current = false; }, 5000);
     }
   }, []);
 
   const checkActiveConn = () => {
-    fetch("/api/connections/patient-history", { credentials: "include" })
+    fetch("/api/connections/patient-history", { credentials: "include", cache: "no-store" })
       .then(r => r.ok ? r.json() : [])
       .then(data => {
-        if (Array.isArray(data)) {
+        if (Array.isArray(data) && !skipBannerRef.current) {
           const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled" && c.orderStatus !== "completed");
           console.log("BANNER DEBUG:", { dataLen: data.length, active: active ? {id: active.id, status: active.status, nurseName: active.nurseName} : null });
           setActiveConn(active ? { id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" } : null);
