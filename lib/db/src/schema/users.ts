@@ -48,6 +48,7 @@ export const connectionsTable = pgTable("connections", {
   ratingGiven: real("rating_given"),
   reviewText: text("review_text"),
   completedAt: timestamp("completed_at"),
+  cancelReason: text("cancel_reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

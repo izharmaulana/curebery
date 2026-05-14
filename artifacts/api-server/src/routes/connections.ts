@@ -227,13 +227,14 @@ router.put("/:id/cancel", async (req, res) => {
       return;
     }
 
-    if (rows[0].status !== "pending") {
+    if (rows[0].status !== "pending" && rows[0].status !== "accepted") {
       res.status(400).json({ error: "INVALID_STATE", message: "Hanya permintaan pending yang bisa dibatalkan" });
       return;
     }
 
+    const { reason } = req.body;
     await db.update(connectionsTable)
-      .set({ status: "cancelled", updatedAt: new Date() })
+      .set({ status: "cancelled", cancelReason: reason ?? null, updatedAt: new Date() })
       .where(eq(connectionsTable.id, id));
 
     req.log.info({ connectionId: id }, "Connection cancelled by patient");
