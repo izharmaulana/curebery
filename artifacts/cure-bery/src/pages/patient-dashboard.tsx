@@ -62,7 +62,7 @@ export default function PatientDashboard() {
       .then(r => r.ok ? r.json() : [])
       .then(data => {
         if (Array.isArray(data)) {
-          const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled");
+          const active = data.find((c: any) => (c.status === "accepted" || c.status === "pending") && c.status !== "completed" && c.status !== "cancelled" && c.orderStatus !== "completed");
           console.log("BANNER DEBUG:", { dataLen: data.length, active: active ? {id: active.id, status: active.status, nurseName: active.nurseName} : null });
           setActiveConn(active ? { id: active.id, nurseName: active.nurseName, status: active.status, orderStatus: active.orderStatus ?? "none" } : null);
         }

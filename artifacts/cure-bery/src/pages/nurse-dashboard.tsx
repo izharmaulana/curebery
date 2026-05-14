@@ -883,10 +883,6 @@ export default function NurseDashboard() {
       <button onClick={(e) => { e.stopPropagation(); setShowDisconnectNurse(true); }} className="ml-2 w-6 h-6 rounded-full bg-white/20 flex items-center justify-center text-white font-bold text-sm hover:bg-white/30">✕</button>
     </div>
   </>
-)}
-          </div>
-          <span className="text-white text-lg">›</span>
-        </div>
       )}
       {waitingNurse && (
         <div className="mx-4 mt-2 rounded-xl bg-teal-600 text-white px-4 py-3 flex items-center justify-between shadow-lg">

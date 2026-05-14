@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, usersTable, nursesTable, connectionsTable } from "@workspace/db";
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 
 const router: IRouter = Router();
 
@@ -90,6 +90,23 @@ router.get("/patient-history", async (req, res) => {
   } catch (err) {
     req.log.error({ err }, "Get patient history error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
+  }
+});
+
+router.get("/nurse-accepted", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const rows = await db.select().from(connectionsTable)
+      .where(eq(connectionsTable.nurseUserId, session.userId))
+      .orderBy(desc(connectionsTable.updatedAt))
+      .limit(50);
+    const active = rows.find(c => c.status === "accepted" && c.orderStatus !== "completed");
+    if (!active) { res.json(null); return; }
+    res.json({ id: active.id, patientName: active.patientName, status: active.status, orderStatus: active.orderStatus });
+  } catch (err) {
+    req.log.error({ err }, "Nurse accepted error");
+    res.status(500).json({ error: "SERVER_ERROR" });
   }
 });
 
@@ -274,7 +291,7 @@ router.post("/:id/review", async (req, res) => {
     if (conn.completedAt) { res.status(400).json({ error: "ALREADY_REVIEWED" }); return; }
 
     await db.update(connectionsTable)
-      .set({ ratingGiven: rating, reviewText: review ?? null, completedAt: new Date(), orderStatus: "completed", updatedAt: new Date() })
+      .set({ ratingGiven: rating, reviewText: review ?? null, completedAt: new Date(), status: "completed", orderStatus: "completed", updatedAt: new Date() })
       .where(eq(connectionsTable.id, id));
 
     // Hitung rata-rata rating baru untuk perawat ini
@@ -376,6 +393,26 @@ router.get("/:id/order-status", async (req, res) => {
     });
   } catch (err) {
     req.log.error({ err }, "Get order status error");
+    res.status(500).json({ error: "SERVER_ERROR" });
+  }
+});
+
+router.put("/:id/patient-location", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) { res.status(401).json({ error: "UNAUTHORIZED" }); return; }
+    const id = parseInt(req.params.id);
+    const { lat, lng } = req.body;
+    if (!lat || !lng) { res.status(400).json({ error: "INVALID_INPUT" }); return; }
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) { res.status(404).json({ error: "NOT_FOUND" }); return; }
+    if (rows[0].patientUserId !== session.userId) { res.status(403).json({ error: "FORBIDDEN" }); return; }
+    await db.update(connectionsTable)
+      .set({ patientLat: lat, patientLng: lng, updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    res.json({ ok: true });
+  } catch (err) {
+    req.log.error({ err }, "Update patient location error");
     res.status(500).json({ error: "SERVER_ERROR" });
   }
 });

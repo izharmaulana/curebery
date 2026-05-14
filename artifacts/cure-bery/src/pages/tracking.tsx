@@ -127,6 +127,25 @@ export default function TrackingPage() {
     pollRef.current = setInterval(poll, interval);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [connectionId, isNurseMode]);
+  // Kirim lokasi pasien ke server setiap 5 detik
+  useEffect(() => {
+    if (!connectionId || isNurseMode) return;
+    const sendLocation = async () => {
+      if (!gpsLocation || (gpsLocation.lat === -6.2088 && gpsLocation.lng === 106.8456)) return;
+      try {
+        await fetch(`/api/connections/${connectionId}/patient-location`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ lat: gpsLocation.lat, lng: gpsLocation.lng }),
+        });
+      } catch {}
+    };
+    sendLocation();
+    const interval = setInterval(sendLocation, 5000);
+    return () => clearInterval(interval);
+  }, [connectionId, isNurseMode, isGpsActive, gpsLocation]);
+
 
   // Patient: polling untuk detect nurse reject order
   useEffect(() => {
