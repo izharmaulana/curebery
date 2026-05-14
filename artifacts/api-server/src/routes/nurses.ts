@@ -67,6 +67,7 @@ router.get("/nearby", async (req, res) => {
         };
       })
       .filter(nurse => nurse !== null)
+      .filter(nurse => nurse.distanceKm <= radiusKm)
 
     const response = GetNearbyNursesResponse.parse(nursesWithDistance);
     res.json(response);
