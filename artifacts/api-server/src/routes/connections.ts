@@ -67,6 +67,7 @@ router.post("/", async (req, res) => {
     }).returning({ id: connectionsTable.id });
 
     req.log.info({ patientId: session.userId, nurseProfileId }, "Connection request created");
+    fetch("http://localhost:8080/api/push/send", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: "Order Masuk!", body: `Pasien ${patient[0].name} membutuhkan perawat`, url: "/nurse-dashboard", tag: "order", userId: nurseRows[0].userId }) }).catch(() => {});
     res.status(201).json({ connectionId: connection.id });
   } catch (err) {
     req.log.error({ err }, "Create connection error");
