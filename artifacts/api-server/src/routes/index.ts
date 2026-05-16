@@ -5,6 +5,7 @@ import nursesRouter from "./nurses";
 import connectionsRouter from "./connections";
 import messagesRouter from "./messages";
 import aiRouter from "./ai";
+import pushRouter from "./push";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use("/nurses", nursesRouter);
 router.use("/connections", connectionsRouter);
 router.use("/messages", messagesRouter);
 router.use("/ai", aiRouter);
+router.use("/push", pushRouter);
 
 export default router;

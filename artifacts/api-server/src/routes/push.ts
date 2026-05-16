@@ -1,5 +1,9 @@
 import { Router } from "express";
 import webpush from "web-push";
+import https from "https";
+import http from "http";
+(http.globalAgent as any).family = 4;
+(https.globalAgent as any).family = 4;
 import { db } from "@workspace/db";
 import { sql } from "drizzle-orm";
 
@@ -61,12 +65,7 @@ router.post("/send", async (req, res) => {
     results.map(async (r, i) => {
       if (r.status === "rejected") {
         const err = (r as any).reason;
-        req.log.error({
-          message: err?.message,
-          statusCode: err?.statusCode,
-          body: err?.body,
-          endpoint: rows[i].endpoint?.slice(0, 60)
-        }, "push failed");
+        req.log.error({ raw: String(err), keys: JSON.stringify(Object.keys(err||{})), statusCode: err?.statusCode, code: err?.code, body: err?.body, endpoint: rows[i].endpoint?.slice(0,60) }, "push failed");
         if (err?.statusCode === 410) {
           await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
         }
