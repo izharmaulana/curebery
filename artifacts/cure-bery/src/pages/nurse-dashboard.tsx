@@ -150,6 +150,34 @@ function ProfileView({ userName, onLogout, nurseRating, nurseTotalPatients }: { 
       .finally(() => setIsLoadingProfile(false));
   }, []);
 
+  const [notifStatus, setNotifStatus] = useState<string>("default");
+
+  const subscribePush = async () => {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      alert("Browser tidak mendukung notifikasi push");
+      return;
+    }
+    const permission = await Notification.requestPermission();
+    setNotifStatus(permission);
+    if (permission !== "granted") return;
+    const reg = await navigator.serviceWorker.register("/sw.js");
+    await navigator.serviceWorker.ready;
+    const keyRes = await fetch("/api/push/vapid-public-key");
+    const { key } = await keyRes.json();
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: key
+    });
+    await fetch("/api/push/subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ subscription: sub })
+    });
+    alert("Notifikasi berhasil diaktifkan!");
+  };
+
+
   const compressImage = (file: File): Promise<string> =>
     new Promise(resolve => {
       const img = new Image();
@@ -556,6 +584,26 @@ function SidebarListView({
           <Switch checked={isOnline} onCheckedChange={onStatusChange} disabled={updatePending} className="data-[state=checked]:bg-emerald-500 scale-110" />
         </div>
 
+        <div className="flex items-center justify-between mt-3 mb-2 px-1">
+          <div>
+            <p className="text-xs font-semibold text-gray-700">🔔 Notifikasi Pasien</p>
+            <p className="text-[10px] text-muted-foreground">Terima notif walau ditutup</p>
+          </div>
+          <button
+            onClick={async () => {
+              const reg = await navigator.serviceWorker.register("/sw.js");
+              const perm = await Notification.requestPermission();
+              if (perm !== "granted") { alert("Izin notifikasi ditolak"); return; }
+              const { key } = await fetch("/api/push/vapid-public-key").then(r => r.json());
+              const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key });
+              await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ subscription: sub }) });
+              alert("Notifikasi berhasil diaktifkan!");
+            }}
+            className="px-3 py-1 text-xs rounded-full bg-teal-500 text-white font-semibold"
+          >
+            {typeof window !== "undefined" && Notification.permission === "granted" ? "Aktif ✓" : "Aktifkan"}
+          </button>
+        </div>
         <div className="grid grid-cols-3 gap-2 mt-3">
           {[
             { val: nurseRating > 0 ? `${nurseRating} ★` : "Baru", label: "Rating", cls: "text-amber-500" },
@@ -969,6 +1017,7 @@ export default function NurseDashboard() {
             >
               {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
             </button>
+
             <div className={`hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm font-semibold transition-all ${isOnline ? "bg-emerald-50 border-emerald-200 text-emerald-700" : "bg-gray-100 border-border/60 text-gray-500"}`}>
               <span className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-gray-400"}`} />
               {isOnline ? "Online" : "Offline"}
@@ -1059,9 +1108,12 @@ export default function NurseDashboard() {
               radiusOptions={RADIUS_OPTIONS}
             />
           )}
+
+
           {activeTab === "profile" && (
             <ProfileView userName={activeUser.name} onLogout={handleLogout} nurseRating={nurseRating} nurseTotalPatients={nurseTotalPatients} />
           )}
+
         </aside>
 
         {/* Map */}
