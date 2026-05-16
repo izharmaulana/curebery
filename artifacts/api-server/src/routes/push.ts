@@ -60,8 +60,14 @@ router.post("/send", async (req, res) => {
   await Promise.all(
     results.map(async (r, i) => {
       if (r.status === "rejected") {
-        req.log.error({ reason: (r as any).reason?.message, endpoint: rows[i].endpoint?.slice(0, 50) }, "push failed");
-        if ((r as any).reason?.statusCode === 410) {
+        const err = (r as any).reason;
+        req.log.error({
+          message: err?.message,
+          statusCode: err?.statusCode,
+          body: err?.body,
+          endpoint: rows[i].endpoint?.slice(0, 60)
+        }, "push failed");
+        if (err?.statusCode === 410) {
           await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
         }
       }
