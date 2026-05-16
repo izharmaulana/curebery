@@ -3,11 +3,16 @@ import webpush from "web-push";
 
 const router = Router();
 
-// Simpan subscriptions di memory (sementara, nanti bisa pindah ke DB)
+webpush.setVapidDetails(
+  "mailto:admin@curebery.my.id",
+  process.env.VAPID_PUBLIC!,
+  process.env.VAPID_PRIVATE!
+);
+
 const subscriptions: Map<string, webpush.PushSubscription> = new Map();
 
 router.get("/vapid-public-key", (req, res) => {
-  res.json({ key: process.env.VAPID_PUBLIC_KEY });
+  res.json({ key: process.env.VAPID_PUBLIC });
 });
 
 router.post("/subscribe", (req, res) => {
