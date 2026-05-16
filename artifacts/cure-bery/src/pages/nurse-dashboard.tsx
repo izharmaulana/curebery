@@ -591,19 +591,19 @@ function SidebarListView({
           </div>
           <button
             onClick={async () => {
-              const reg = await navigator.serviceWorker.register("/sw.js");
-              const existingSub = await reg.pushManager.getSubscription();
-              if (existingSub && Notification.permission === "granted") {
-                await existingSub.unsubscribe();
-                await fetch("/api/push/unsubscribe", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ endpoint: existingSub.endpoint }) });
-                alert("Notifikasi dinonaktifkan");
-                window.location.reload(); return;
-              }
-              const perm = await Notification.requestPermission(); if (perm !== "granted") { alert("Izin notifikasi ditolak"); return; }
-              const { key } = await fetch("/api/push/vapid-public-key").then(r => r.json());
-              const rawKey = key.replace(/-/g,"+").replace(/_/g,"/"); const padding = "=".repeat((4 - rawKey.length % 4) % 4); const base64 = (rawKey + padding); const raw = window.atob(base64); const appKey = new Uint8Array(new ArrayBuffer(raw.length)); for(let i=0;i<raw.length;i++) appKey[i]=raw.charCodeAt(i); let sub; try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey }); } catch(e) {return; }
-              await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ subscription: sub }) });
-              alert("Notifikasi berhasil diaktifkan!"); window.location.reload();
+              const perm = await Notification.requestPermission();
+              if (perm !== "granted") { alert("Izin notifikasi ditolak"); return; }
+              try {
+                const { initializeApp, getApps } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+                const { getMessaging, getToken } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js");
+                const app = getApps().length ? getApps()[0] : initializeApp({ apiKey: "AIzaSyAxogxh70X6IH4fwhjqkgqcy4pUwOXK64I", projectId: "curebery", messagingSenderId: "779244402150", appId: "1:779244402150:web:b486dc7597f23339055227" });
+                const messaging = getMessaging(app);
+                await navigator.serviceWorker.register("/sw.js");
+                const token = await getToken(messaging, { vapidKey: "BCqKefqXP5KxJcGN2ESPZe8WVKKjaEvi7ACnkS2pRWrF4tfzVUj41vdmX9w2pbdrwCEkV-fjjPqHlBGtHcSUqyw" });
+                await fetch("/api/push/subscribe", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "include", body: JSON.stringify({ fcmToken: token }) });
+                alert("Notifikasi berhasil diaktifkan!");
+                window.location.reload();
+              } catch(e) { alert("Error: " + e.message); }
             }}
             className="px-3 py-1 text-xs rounded-full font-semibold bg-teal-500 text-white"
           >
