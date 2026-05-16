@@ -48,6 +48,7 @@ router.post("/send", async (req, res) => {
     result = await db.execute(sql`SELECT * FROM push_subscriptions`);
   }
   const rows: any[] = Array.isArray(result) ? result : (result.rows ?? []);
+  req.log.info({ rowCount: rows.length }, "push send: rows found");
   const results = await Promise.allSettled(
     rows.map((row: any) =>
       webpush.sendNotification(
@@ -59,7 +60,10 @@ router.post("/send", async (req, res) => {
   await Promise.all(
     results.map(async (r, i) => {
       if (r.status === "rejected") {
-        await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
+        req.log.error({ reason: (r as any).reason?.message, endpoint: rows[i].endpoint?.slice(0, 50) }, "push failed");
+        if ((r as any).reason?.statusCode === 410) {
+          await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
+        }
       }
     })
   );
