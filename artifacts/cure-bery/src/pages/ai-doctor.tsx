@@ -39,7 +39,7 @@ export default function AIDoctorPage() {
       setTimeout(() => {
         setMessages(prev => [...prev, { role: "user" as const, content: prefill }]);
         setLoading(true);
-        const history = messages.map(m => ({ role: m.role, content: m.content }));
+        const history = messages.map(m => ({ role: m.role, content: m.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim() }));
         fetch("/api/ai/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -61,7 +61,7 @@ export default function AIDoctorPage() {
     setMessages(prev => [...prev, { role: "user", content: userMsg }]);
     setLoading(true);
     try {
-      const history = messages.map(m => ({ role: m.role, content: m.content }));
+      const history = messages.map(m => ({ role: m.role, content: m.content.replace(/<think>[\s\S]*?<\/think>/g, "").trim() }));
       const res = await fetch("/api/ai/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

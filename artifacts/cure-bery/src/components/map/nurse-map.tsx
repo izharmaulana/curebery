@@ -52,6 +52,11 @@ function RecenterMap({ location }: { location: { lat: number; lng: number } }) {
       firstRender.current = false;
     }
   }, [location, map]);
+  useEffect(() => {
+    const handler = () => map.panTo([location.lat, location.lng], { animate: true });
+    window.addEventListener("recenter-map", handler);
+    return () => window.removeEventListener("recenter-map", handler);
+  }, [map, location]);
   return null;
 }
 
@@ -196,6 +201,15 @@ export function NurseMap({ nurses, location = NURSE_LOCATION, isOnline, onViewPr
           <RecenterMap location={location} />
         </MapContainer>
 
+        {/* Tombol locate */}
+        <div className="absolute bottom-4 right-4 z-[500]">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("recenter-map"))}
+            className="w-10 h-10 rounded-full shadow-lg border border-border/40 bg-white hover:bg-teal-50 flex items-center justify-center transition-colors"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="4"/></svg>
+          </button>
+        </div>
         {/* Live indicator badge */}
         {isOnline && (
           <div className="absolute top-3 right-3 z-[500] flex items-center gap-1.5 bg-white/90 backdrop-blur-sm border border-emerald-200 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full shadow-md">

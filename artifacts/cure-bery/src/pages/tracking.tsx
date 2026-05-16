@@ -127,6 +127,25 @@ export default function TrackingPage() {
     pollRef.current = setInterval(poll, interval);
     return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [connectionId, isNurseMode]);
+  // Kirim lokasi nurse ke server setiap 5 detik
+  useEffect(() => {
+    if (!connectionId || !isNurseMode) return;
+    const sendNurseLocation = async () => {
+      if (!gpsLocation || (gpsLocation.lat === -6.2088 && gpsLocation.lng === 106.8456)) return;
+      try {
+        await fetch(`/api/connections/${connectionId}/nurse-location`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ lat: gpsLocation.lat, lng: gpsLocation.lng }),
+        });
+      } catch {}
+    };
+    sendNurseLocation();
+    const interval = setInterval(sendNurseLocation, 5000);
+    return () => clearInterval(interval);
+  }, [connectionId, isNurseMode, isGpsActive, gpsLocation]);
+
   // Kirim lokasi pasien ke server setiap 5 detik
   useEffect(() => {
     if (!connectionId || isNurseMode) return;
@@ -204,7 +223,7 @@ export default function TrackingPage() {
 
   // For nurse mode: "remote" is patient (static), "my" moves (nurse GPS)
   // For patient mode: "remote" is nurse (moves), "my" is patient (static)
-  const movingPos = isNurseMode ? myPos : remotePos;     // the thing that moves
+  const movingPos = isNurseMode ? (isGpsActive ? myPos : null) : remotePos;     // the thing that moves
   const staticPos = isNurseMode ? remotePos : myPos;     // the static target
   const heading = movingPos && staticPos ? calcHeading(movingPos, staticPos) : 0;
 

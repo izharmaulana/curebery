@@ -61,6 +61,11 @@ function FitBounds({ nurses, location }: { nurses: NursePublicProfile[], locatio
     ]);
     map.fitBounds(bounds, { padding: [50, 50] });
   }, [nurses, location, map]);
+  useEffect(() => {
+    const handler = () => map.panTo([location.lat, location.lng], { animate: true });
+    window.addEventListener("recenter-patient-map", handler);
+    return () => window.removeEventListener("recenter-patient-map", handler);
+  }, [map, location]);
   return null;
 }
 
@@ -166,6 +171,14 @@ export function PatientMap({ nurses, userLocation = DEFAULT_PATIENT_LOCATION, se
       </MapContainer>
       
       {/* Map Overlay Gradients */}
+      <div className="absolute bottom-20 right-4 z-[500]">
+        <button
+          onClick={() => window.dispatchEvent(new CustomEvent("recenter-patient-map"))}
+          className="w-10 h-10 rounded-full shadow-lg border border-border/40 bg-white hover:bg-teal-50 flex items-center justify-center transition-colors"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><circle cx="12" cy="12" r="4"/></svg>
+        </button>
+      </div>
       <div className="absolute top-0 left-0 right-0 h-8 bg-gradient-to-b from-black/5 to-transparent pointer-events-none z-[400]" />
       <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-white to-transparent pointer-events-none z-[400]" />
     </div>

@@ -413,6 +413,7 @@ export default function PatientDashboard() {
       nurse={profileNurse}
       open={profileNurse !== null}
       onClose={() => setProfileNurse(null)}
+      onConnect={() => { if (profileNurse) { setConnectNurse(profileNurse); setProfileNurse(null); } }}
     />
     {connectNurse && (
       <ConnectModal
