@@ -2,7 +2,8 @@ importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js
 importScripts("https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging-compat.js");
 
 firebase.initializeApp({
-  apiKey: "AIzaSyAxogxh70X6IH4fwhjqkgqcy4pUwOXK64I", projectId: "curebery",
+  apiKey: "AIzaSyAxogxh70X6IH4fwhjqkgqcy4pUwOXK64I",
+  projectId: "curebery",
   messagingSenderId: "779244402150",
   appId: "1:779244402150:web:b486dc7597f23339055227"
 });
@@ -16,7 +17,10 @@ messaging.onBackgroundMessage(function(payload) {
     body: body,
     icon: "/favicon.svg",
     badge: "/favicon.svg",
+    vibrate: [500, 200, 500, 200, 500, 200, 500],
     requireInteraction: true,
+    tag: "curebery-order",
+    renotify: true,
     data: { url: payload.fcmOptions?.link || "/" }
   });
 });
