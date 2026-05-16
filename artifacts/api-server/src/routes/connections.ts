@@ -101,9 +101,8 @@ router.get("/nurse-accepted", async (req, res) => {
       .where(eq(connectionsTable.nurseUserId, session.userId))
       .orderBy(desc(connectionsTable.updatedAt))
       .limit(50);
-    const active = rows.find(c => c.status === "accepted" && c.orderStatus !== "completed");
-    if (!active) { res.json(null); return; }
-    res.json({ id: active.id, patientName: active.patientName, status: active.status, orderStatus: active.orderStatus });
+    const active = rows.filter(c => c.status === "accepted" && c.orderStatus !== "completed");
+    res.json(active.map(c => ({ id: c.id, patientName: c.patientName, status: c.status, orderStatus: c.orderStatus })));
   } catch (err) {
     req.log.error({ err }, "Nurse accepted error");
     res.status(500).json({ error: "SERVER_ERROR" });
@@ -241,6 +240,80 @@ router.put("/:id/cancel", async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     req.log.error({ err }, "Cancel connection error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
+  }
+});
+
+router.put("/:id/end", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "ID tidak valid" });
+      return;
+    }
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Koneksi tidak ditemukan" });
+      return;
+    }
+    if (rows[0].nurseUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN", message: "Hanya perawat yang bisa mengakhiri sesi" });
+      return;
+    }
+    if (rows[0].status === "cancelled" || rows[0].orderStatus === "completed") {
+      res.status(400).json({ error: "INVALID_STATE", message: "Sesi sudah berakhir" });
+      return;
+    }
+    const reason = req.body?.reason ?? null;
+    await db.update(connectionsTable)
+      .set({ status: "cancelled", cancelReason: reason, updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    req.log.info({ connectionId: id }, "Session ended by nurse");
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "End session error");
+    res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
+  }
+});
+
+router.put("/:id/end", async (req, res) => {
+  try {
+    const session = req.session as any;
+    if (!session?.userId) {
+      res.status(401).json({ error: "UNAUTHORIZED", message: "Belum login" });
+      return;
+    }
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      res.status(400).json({ error: "INVALID_INPUT", message: "ID tidak valid" });
+      return;
+    }
+    const rows = await db.select().from(connectionsTable).where(eq(connectionsTable.id, id)).limit(1);
+    if (rows.length === 0) {
+      res.status(404).json({ error: "NOT_FOUND", message: "Koneksi tidak ditemukan" });
+      return;
+    }
+    if (rows[0].nurseUserId !== session.userId) {
+      res.status(403).json({ error: "FORBIDDEN", message: "Hanya perawat yang bisa mengakhiri sesi" });
+      return;
+    }
+    if (rows[0].status === "cancelled" || rows[0].orderStatus === "completed") {
+      res.status(400).json({ error: "INVALID_STATE", message: "Sesi sudah berakhir" });
+      return;
+    }
+    const reason = req.body?.reason ?? null;
+    await db.update(connectionsTable)
+      .set({ status: "cancelled", cancelReason: reason, updatedAt: new Date() })
+      .where(eq(connectionsTable.id, id));
+    req.log.info({ connectionId: id }, "Session ended by nurse");
+    res.json({ success: true });
+  } catch (err) {
+    req.log.error({ err }, "End session error");
     res.status(500).json({ error: "SERVER_ERROR", message: "Terjadi kesalahan" });
   }
 });
@@ -392,6 +465,7 @@ router.get("/:id/order-status", async (req, res) => {
       nurseSpec: conn.nurseSpec,
       patientLat: conn.patientLat,
       patientLng: conn.patientLng,
+      cancelReason: conn.cancelReason,
     });
   } catch (err) {
     req.log.error({ err }, "Get order status error");

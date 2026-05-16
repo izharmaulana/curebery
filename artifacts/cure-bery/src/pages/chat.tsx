@@ -44,6 +44,9 @@ export default function ChatPage() {
   const [patientName, setPatientName] = useState("");
   const [showRating, setShowRating] = useState(false);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [showEndModal, setShowEndModal] = useState(false);
+  const [endReason, setEndReason] = useState("");
+  const [customEndReason, setCustomEndReason] = useState("");
   const [showCancelledPopup, setShowCancelledPopup] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState("");
   const [customReason, setCustomReason] = useState("");
@@ -98,10 +101,16 @@ export default function ChatPage() {
         const res = await fetch(`/api/connections/${connectionId}/order-status`, { credentials: "include", cache: "no-store" });
         if (!res.ok) return;
         const data = await res.json();
-        console.log("PATIENT POLL:", data.orderStatus, data.status); if (data.orderStatus === "order_rejected" && data.status === "cancelled") {
+        console.log("PATIENT POLL:", data.orderStatus, data.status);
+        if (data.orderStatus === "order_rejected" && data.status === "cancelled") {
           clearInterval(poll);
           localStorage.setItem("session_ended", "1");
           alert("Perawat menolak kunjungan ke rumah");
+          setLocation("/patient-dashboard");
+        } else if (data.status === "cancelled" && data.orderStatus !== "order_rejected") {
+          clearInterval(poll);
+          localStorage.setItem("session_ended", "1");
+          alert("Perawat mengakhiri sesi: " + (data.cancelReason || "Tidak ada alasan"));
           setLocation("/patient-dashboard");
         }
       } catch {}
@@ -483,6 +492,17 @@ export default function ChatPage() {
         )}
 
         {/* Nurse: track patient button if order accepted */}
+        {isNurseMode && (
+          <div className="px-4 pt-3 pb-0 max-w-xl mx-auto">
+            <button
+              onClick={() => setShowEndModal(true)}
+              className="w-full h-10 rounded-xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-sm"
+            >
+              <X className="w-4 h-4" />
+              Putuskan Hubungan
+            </button>
+          </div>
+        )}
         {isNurseMode && orderStatus === "order_accepted" && (
           <div className="px-4 pt-3 pb-0 max-w-xl mx-auto">
             <button
@@ -580,6 +600,55 @@ export default function ChatPage() {
                 }}
                 className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold">
                 Ya, Batalkan
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showEndModal && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="font-bold text-lg">Putuskan Hubungan</h3>
+            <p className="text-sm text-muted-foreground">Pilih alasan memutuskan hubungan:</p>
+            <div className="space-y-2">
+              {["Harga tidak sesuai", "Alamat terlalu jauh", "Pasien tidak responsif", "Isi sendiri"].map(r => (
+                <button
+                  key={r}
+                  onClick={() => setEndReason(r)}
+                  className={"w-full text-left px-4 py-2.5 rounded-xl border text-sm font-medium transition-all " + (endReason === r ? "border-red-500 bg-red-50 text-red-600" : "border-border/60 hover:bg-gray-50")}>
+                  {r}
+                </button>
+              ))}
+            </div>
+            {endReason === "Isi sendiri" && (
+              <input
+                className="w-full border rounded-xl px-4 py-2.5 text-sm"
+                placeholder="Tulis alasan..."
+                value={customEndReason}
+                onChange={e => setCustomEndReason(e.target.value)}
+              />
+            )}
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={() => { setShowEndModal(false); setEndReason(""); setCustomEndReason(""); }}
+                className="flex-1 h-10 rounded-xl border text-sm font-medium">
+                Batal
+              </button>
+              <button
+                disabled={!endReason || (endReason === "Isi sendiri" && !customEndReason.trim())}
+                onClick={async () => {
+                  const reason = endReason === "Isi sendiri" ? customEndReason : endReason;
+                  await fetch("/api/connections/" + connectionId + "/end", {
+                    method: "PUT", credentials: "include",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ reason })
+                  });
+                  setShowEndModal(false);
+                  localStorage.setItem("session_ended", "1");
+                  setLocation("/nurse-dashboard");
+                }}
+                className="flex-1 h-10 rounded-xl bg-red-500 hover:bg-red-600 disabled:opacity-50 text-white text-sm font-bold">
+                Ya, Putuskan
               </button>
             </div>
           </div>

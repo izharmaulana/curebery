@@ -716,13 +716,14 @@ export default function NurseDashboard() {
     return () => { if (incomingPollRef.current) { clearInterval(incomingPollRef.current); incomingPollRef.current = null; } };
   }, [isOnline]);
 
-  const [activePatientConn, setActivePatientConn] = useState<{id: number, patientName: string, status: string, orderStatus: string} | null>(null);
+  const [activePatientConns, setActivePatientConns] = useState<{id: number, patientName: string, status: string, orderStatus: string}[]>([]);
+  const [showActiveList, setShowActiveList] = useState(false);
 
   useEffect(() => {
     const checkConn = () => {
       fetch("/api/connections/nurse-accepted", { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
-        .then(data => { setActivePatientConn(data?.id && data?.status === "accepted" ? data : null); })
+        .then(data => { setActivePatientConns(Array.isArray(data) ? data : []); })
         .catch(() => {});
     };
     checkConn();
@@ -858,15 +859,35 @@ export default function NurseDashboard() {
 
   return (
     <div className="flex flex-col h-screen w-full bg-gray-50 dark:bg-gray-950 font-sans overflow-hidden">
-      {activePatientConn && (
-        <div onClick={() => setLocation(`/chat?connectionId=${activePatientConn.id}&name=${encodeURIComponent(activePatientConn.patientName)}&spec=Perawat%20Umum&type=nurse`)}
-          className="mx-3 mt-2 px-4 py-3 bg-teal-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
-          <div>
-            <p className="text-xs font-bold">Sesi Aktif dengan {activePatientConn.patientName}</p>
-            <p className="text-[11px] opacity-80">{activePatientConn.orderStatus === "ordered" || activePatientConn.orderStatus === "order_accepted" ? "Tap untuk lihat peta" : "Tap untuk lanjut chat"}</p>
+      {activePatientConns.length > 0 && (
+        <>
+          <div onClick={() => setShowActiveList(true)}
+            className="mx-3 mt-2 px-4 py-3 bg-teal-500 text-white rounded-xl flex items-center justify-between cursor-pointer shadow-sm z-40 relative">
+            <div>
+              <p className="text-xs font-bold">{activePatientConns.length} Sesi Aktif</p>
+              <p className="text-[11px] opacity-80">Tap untuk lihat daftar pasien</p>
+            </div>
+            <span className="text-white text-lg">›</span>
           </div>
-          <span className="text-white text-lg">›</span>
-        </div>
+          {showActiveList && (
+            <div className="fixed inset-0 bg-black/60 z-50 flex items-end justify-center p-4">
+              <div className="bg-white dark:bg-gray-900 rounded-2xl w-full max-w-sm p-5 space-y-3">
+                <h3 className="font-bold text-lg">Sesi Aktif ({activePatientConns.length})</h3>
+                {activePatientConns.map(c => (
+                  <div key={c.id} onClick={() => { setShowActiveList(false); setLocation(`/chat?connectionId=${c.id}&name=${encodeURIComponent(c.patientName)}&spec=Perawat%20Umum&type=nurse`); }}
+                    className="flex items-center justify-between px-4 py-3 rounded-xl border border-teal-200 bg-teal-50 cursor-pointer hover:bg-teal-100">
+                    <div>
+                      <p className="text-sm font-bold text-teal-800">{c.patientName}</p>
+                      <p className="text-xs text-teal-600">{c.orderStatus === "ordered" || c.orderStatus === "order_accepted" ? "Order kunjungan" : "Chat"}</p>
+                    </div>
+                    <span className="text-teal-500 text-lg">›</span>
+                  </div>
+                ))}
+                <button onClick={() => setShowActiveList(false)} className="w-full h-10 rounded-xl border text-sm font-medium">Tutup</button>
+              </div>
+            </div>
+          )}
+        </>
       )}
       {activeNurseConn && (
   <>
