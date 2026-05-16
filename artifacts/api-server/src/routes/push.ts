@@ -1,5 +1,7 @@
 import { Router } from "express";
 import webpush from "web-push";
+import { db } from "@workspace/db";
+import { sql } from "drizzle-orm";
 
 const router = Router();
 
@@ -9,35 +11,61 @@ webpush.setVapidDetails(
   process.env.VAPID_PRIVATE!
 );
 
-const subscriptions: Map<string, webpush.PushSubscription> = new Map();
-
 router.get("/vapid-public-key", (req, res) => {
   res.json({ key: process.env.VAPID_PUBLIC });
 });
 
-router.post("/subscribe", (req, res) => {
+router.post("/subscribe", async (req, res) => {
   const { subscription } = req.body;
   if (!subscription?.endpoint) return res.status(400).json({ error: "Invalid subscription" });
-  subscriptions.set(subscription.endpoint, subscription);
+  const session = req.session as any;
+  const userId = session?.userId ?? 0;
+  const p256dh = subscription.keys?.p256dh ?? "";
+  const auth = subscription.keys?.auth ?? "";
+  await db.execute(sql`
+    INSERT INTO push_subscriptions (user_id, endpoint, p256dh, auth)
+    VALUES (${userId}, ${subscription.endpoint}, ${p256dh}, ${auth})
+    ON CONFLICT (endpoint) DO UPDATE SET user_id = ${userId}, p256dh = ${p256dh}, auth = ${auth}
+  `);
   res.json({ ok: true });
 });
 
-router.post("/unsubscribe", (req, res) => {
+router.post("/unsubscribe", async (req, res) => {
   const { endpoint } = req.body;
-  if (endpoint) subscriptions.delete(endpoint);
+  if (endpoint) {
+    await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${endpoint}`);
+  }
   res.json({ ok: true });
 });
 
 router.post("/send", async (req, res) => {
-  const { title, body, url, tag } = req.body;
+  const { title, body, url, tag, userId } = req.body;
   const payload = JSON.stringify({ title, body, url, tag });
+  let rows: any[];
+  if (userId) {
+    rows = await db.execute(sql`SELECT * FROM push_subscriptions WHERE user_id = ${userId}`);
+  } else {
+    rows = await db.execute(sql`SELECT * FROM push_subscriptions`);
+  }
   const results = await Promise.allSettled(
-    Array.from(subscriptions.values()).map(sub =>
-      webpush.sendNotification(sub, payload)
+    rows.map((row: any) =>
+      webpush.sendNotification(
+        { endpoint: row.endpoint, keys: { p256dh: row.p256dh, auth: row.auth } },
+        payload
+      )
     )
   );
+  const failed = results.filter(r => r.status === "rejected");
+  if (failed.length > 0) {
+    await Promise.all(
+      results.map(async (r, i) => {
+        if (r.status === "rejected") {
+          await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
+        }
+      })
+    );
+  }
   res.json({ sent: results.filter(r => r.status === "fulfilled").length });
 });
 
-export { subscriptions };
 export default router;
