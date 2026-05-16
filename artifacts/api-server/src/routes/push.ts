@@ -41,12 +41,13 @@ router.post("/unsubscribe", async (req, res) => {
 router.post("/send", async (req, res) => {
   const { title, body, url, tag, userId } = req.body;
   const payload = JSON.stringify({ title, body, url, tag });
-  let rows: any[];
+  let result: any;
   if (userId) {
-    rows = await db.execute(sql`SELECT * FROM push_subscriptions WHERE user_id = ${userId}`);
+    result = await db.execute(sql`SELECT * FROM push_subscriptions WHERE user_id = ${userId}`);
   } else {
-    rows = await db.execute(sql`SELECT * FROM push_subscriptions`);
+    result = await db.execute(sql`SELECT * FROM push_subscriptions`);
   }
+  const rows: any[] = Array.isArray(result) ? result : (result.rows ?? []);
   const results = await Promise.allSettled(
     rows.map((row: any) =>
       webpush.sendNotification(
@@ -55,16 +56,13 @@ router.post("/send", async (req, res) => {
       )
     )
   );
-  const failed = results.filter(r => r.status === "rejected");
-  if (failed.length > 0) {
-    await Promise.all(
-      results.map(async (r, i) => {
-        if (r.status === "rejected") {
-          await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
-        }
-      })
-    );
-  }
+  await Promise.all(
+    results.map(async (r, i) => {
+      if (r.status === "rejected") {
+        await db.execute(sql`DELETE FROM push_subscriptions WHERE endpoint = ${rows[i].endpoint}`);
+      }
+    })
+  );
   res.json({ sent: results.filter(r => r.status === "fulfilled").length });
 });
 
