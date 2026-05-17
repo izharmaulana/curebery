@@ -12,6 +12,7 @@ export default function NurseChat() {
   const [input, setInput] = useState("");
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [myName, setMyName] = useState("");
+  const [disconnected, setDisconnected] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,6 +34,18 @@ export default function NurseChat() {
   }, [fetchMessages]);
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    if (!connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/nurse-connections/${connectionId}`, { credentials: "include" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.status === "cancelled") { setDisconnected(true); clearInterval(poll); }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [connectionId]);
 
   const sendMessage = async () => {
     if (!input.trim() || !connectionId) return;
@@ -48,6 +61,15 @@ export default function NurseChat() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950">
+      {disconnected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+            <p className="text-lg font-bold text-violet-600 mb-2">Sesi Berakhir</p>
+            <p className="text-sm text-gray-500 mb-4">Salah satu pihak telah memutuskan hubungan.</p>
+            <button onClick={() => setLocation("/nurse-dashboard")} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">Kembali ke Dashboard</button>
+          </div>
+        </div>
+      )}
       <header className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-3 border-b border-border/50 shadow-sm">
         <button onClick={() => setLocation("/nurse-dashboard")} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
           <ArrowLeft className="w-5 h-5" />

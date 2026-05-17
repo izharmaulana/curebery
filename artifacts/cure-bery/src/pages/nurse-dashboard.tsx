@@ -793,7 +793,7 @@ export default function NurseDashboard() {
     const checkNurseConn = () => {
       fetch("/api/nurse-connections/active", { credentials: "include" })
         .then(r => r.ok ? r.json() : null)
-        .then(data => { setActiveNurseConn(data?.id && data?.status === "accepted" ? data : null); })
+        .then(data => { const conn = Array.isArray(data) ? data[0] : null; setActiveNurseConn(conn?.id ? conn : null); })
         .catch(() => {});
     };
     checkNurseConn();
@@ -823,6 +823,21 @@ export default function NurseDashboard() {
     cancelledPollRef.current = setInterval(poll, 3000);
     return () => { if (cancelledPollRef.current) clearInterval(cancelledPollRef.current); };
   }, []);
+  const [nurseDisconnectNotif, setNurseDisconnectNotif] = useState(false);
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch("/api/nurse-connections/active", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length === 0 && activeNurseConn) {
+          setNurseDisconnectNotif(true);
+          setActiveNurseConn(null);
+        }
+      } catch {}
+    }, 3000);
+    return () => clearInterval(poll);
+  }, [activeNurseConn]);
   const [nurseIncoming, setNurseIncoming] = useState<{ id: number; requesterName: string } | null>(null);
   const [waitingNurse, setWaitingNurse] = useState<{ name: string } | null>(null);
   const nurseIncomingPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -980,6 +995,15 @@ export default function NurseDashboard() {
         <div className="mx-4 mt-2 rounded-xl bg-violet-600 text-white px-4 py-3 flex items-center justify-between shadow-lg gap-3">
           <div><div className="text-sm font-bold">🔗 {nurseIncoming.requesterName} ingin terhubung!</div><div className="text-xs opacity-80">Sesama nakes ingin chat atau main game</div></div>
           <div className="flex gap-2"><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/accept`, { method: "PUT", credentials: "include" }); const connId = nurseIncoming.id; const requesterName = nurseIncoming.requesterName; setNurseIncoming(null); setWaitingNurse({ name: requesterName }); const poll = setInterval(async () => { try { const r = await fetch(`/api/nurse-connections/${connId}`, { credentials: "include" }); const d = await r.json(); if (d.action && d.actionUrl) { clearInterval(poll); setWaitingNurse(null); try { const u = new URL(d.actionUrl, window.location.origin); u.searchParams.set("name", requesterName); setLocation("/nurse-chat" + u.search); } catch { setLocation(d.actionUrl); } } } catch {} }, 2000); setTimeout(() => clearInterval(poll), 120000); }} className="bg-white text-violet-600 px-3 py-1 rounded-lg text-xs font-bold">Terima</button><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/reject`, { method: "PUT", credentials: "include" }); setNurseIncoming(null); }} className="bg-violet-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Tolak</button></div>
+        </div>
+      )}
+      {nurseDisconnectNotif && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+            <p className="text-lg font-bold text-violet-600 mb-2">Sesi Berakhir</p>
+            <p className="text-sm text-gray-500 mb-4">Salah satu pihak telah memutuskan hubungan.</p>
+            <button onClick={() => setNurseDisconnectNotif(false)} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">OK</button>
+          </div>
         </div>
       )}
       {cancelledNotif && (
