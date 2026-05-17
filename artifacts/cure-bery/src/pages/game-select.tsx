@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useLocation, useSearch } from "wouter";
 import { ArrowLeft, Grid3x3, Brain, Trophy } from "lucide-react";
 
@@ -7,9 +8,44 @@ export default function GameSelectPage() {
   const params = new URLSearchParams(search);
   const opponent = params.get("opponent") ?? "Rekan Nakes";
   const spec = params.get("spec") ?? "Perawat Umum";
+  const connectionId = params.get("connectionId");
+  const [waiting, setWaiting] = useState(false);
+  const [gameInvite, setGameInvite] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/nurse-connections/${connectionId}`, { credentials: "include" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.gameState === "tictactoe_declined") { setWaiting(false); }
+        if (d.gameState === "tictactoe_accepted") { setWaiting(false); setLocation(`/tictactoe?connectionId=${connectionId}&name=${encodeURIComponent(opponent)}`); }
+        if (d.gameState === "tictactoe_invited" && !waiting) { setGameInvite("tictactoe"); }
+        if (d.gameState === null || d.gameState === "tictactoe_declined") { setGameInvite(null); }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [connectionId, waiting]);
+
+  const inviteTicTacToe = async () => {
+    if (!connectionId) return setLocation(`/game?opponent=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(spec)}`);
+    const r = await fetch(`/api/nurse-connections/${connectionId}`, { credentials: "include" });
+    const d = await r.json();
+    if (d.gameState === "playing") {
+      setLocation(`/tictactoe?connectionId=${connectionId}&name=${encodeURIComponent(opponent)}`);
+      return;
+    }
+    await fetch(`/api/nurse-connections/${connectionId}`, {
+      method: "PATCH", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameState: "tictactoe_invited" })
+    });
+    setWaiting(true);
+  };
 
   const backToConnected = () =>
-    setLocation(`/nurse-connected?name=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(spec)}`);
+    setLocation(`/nurse-connected?name=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(spec)}&connectionId=${connectionId ?? ""}`);
 
   const qp = `opponent=${encodeURIComponent(opponent)}&spec=${encodeURIComponent(spec)}`;
 
@@ -37,8 +73,29 @@ export default function GameSelectPage() {
         </div>
 
         {/* Tic-Tac-Toe card */}
+        {gameInvite && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+              <p className="text-lg font-bold text-violet-600 mb-2">Undangan Main!</p>
+              <p className="text-sm text-gray-500 mb-4">{opponent.split(" ")[0]} mengajak main Tic Tac Toe!</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={async () => { await fetch(`/api/nurse-connections/${connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: "tictactoe_accepted" }) }); setGameInvite(null); setLocation(`/tictactoe?connectionId=${connectionId}&name=${encodeURIComponent(opponent)}`); }} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">Ya</button>
+                <button onClick={async () => { await fetch(`/api/nurse-connections/${connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: "tictactoe_declined" }) }); setGameInvite(null); }} className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">Tidak</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {waiting && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+              <p className="text-lg font-bold text-violet-600 mb-2">Menunggu...</p>
+              <p className="text-sm text-gray-500 mb-4">Menunggu persetujuan {opponent.split(" ")[0]}</p>
+              <button onClick={async () => { await fetch(`/api/nurse-connections/${connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: null }) }); setWaiting(false); }} className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">Batal</button>
+            </div>
+          </div>
+        )}
         <button
-          onClick={() => setLocation(`/game?${qp}`)}
+          onClick={inviteTicTacToe}
           className="w-full max-w-sm bg-white rounded-2xl border-2 border-violet-200 hover:border-violet-400 hover:shadow-lg transition-all duration-200 p-5 text-left active:scale-[0.98]"
         >
           <div className="flex items-center gap-4">

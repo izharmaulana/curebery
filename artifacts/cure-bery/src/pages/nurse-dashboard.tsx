@@ -824,6 +824,26 @@ export default function NurseDashboard() {
     return () => { if (cancelledPollRef.current) clearInterval(cancelledPollRef.current); };
   }, []);
   const [nurseDisconnectNotif, setNurseDisconnectNotif] = useState(false);
+  const [gameInviteConn, setGameInviteConn] = useState<{connectionId: string, partnerName: string} | null>(null);
+  useEffect(() => {
+    const poll = setInterval(async () => {
+      try {
+        const res = await fetch("/api/nurse-connections/active", { credentials: "include" });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          const conn = data[0];
+          if (conn.gameState === "tictactoe_invited") {
+            const partnerName = conn.requesterUserId === user?.id ? conn.targetName : conn.requesterName;
+            setGameInviteConn({ connectionId: String(conn.id), partnerName });
+          } else {
+            setGameInviteConn(null);
+          }
+        }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [user?.id]);
   useEffect(() => {
     const poll = setInterval(async () => {
       try {
@@ -995,6 +1015,18 @@ export default function NurseDashboard() {
         <div className="mx-4 mt-2 rounded-xl bg-violet-600 text-white px-4 py-3 flex items-center justify-between shadow-lg gap-3">
           <div><div className="text-sm font-bold">🔗 {nurseIncoming.requesterName} ingin terhubung!</div><div className="text-xs opacity-80">Sesama nakes ingin chat atau main game</div></div>
           <div className="flex gap-2"><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/accept`, { method: "PUT", credentials: "include" }); const connId = nurseIncoming.id; const requesterName = nurseIncoming.requesterName; setNurseIncoming(null); setWaitingNurse({ name: requesterName }); const poll = setInterval(async () => { try { const r = await fetch(`/api/nurse-connections/${connId}`, { credentials: "include" }); const d = await r.json(); if (d.action && d.actionUrl) { clearInterval(poll); setWaitingNurse(null); try { const u = new URL(d.actionUrl, window.location.origin); u.searchParams.set("name", requesterName); setLocation("/nurse-chat" + u.search); } catch { setLocation(d.actionUrl); } } } catch {} }, 2000); setTimeout(() => clearInterval(poll), 120000); }} className="bg-white text-violet-600 px-3 py-1 rounded-lg text-xs font-bold">Terima</button><button onClick={async () => { await fetch(`/api/nurse-connections/${nurseIncoming.id}/reject`, { method: "PUT", credentials: "include" }); setNurseIncoming(null); }} className="bg-violet-800 text-white px-3 py-1 rounded-lg text-xs font-bold">Tolak</button></div>
+        </div>
+      )}
+      {gameInviteConn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+            <p className="text-lg font-bold text-violet-600 mb-2">Undangan Main!</p>
+            <p className="text-sm text-gray-500 mb-4">{gameInviteConn.partnerName} mengajak main Tic Tac Toe!</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={async () => { await fetch(`/api/nurse-connections/${gameInviteConn.connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: "tictactoe_accepted" }) }); setGameInviteConn(null); setLocation(`/tictactoe?connectionId=${gameInviteConn.connectionId}&name=${encodeURIComponent(gameInviteConn.partnerName)}`); }} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">Ya</button>
+              <button onClick={async () => { await fetch(`/api/nurse-connections/${gameInviteConn.connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: "tictactoe_declined" }) }); setGameInviteConn(null); }} className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">Tidak</button>
+            </div>
+          </div>
         </div>
       )}
       {nurseDisconnectNotif && (

@@ -13,6 +13,8 @@ export default function NurseChat() {
   const [myUserId, setMyUserId] = useState<number | null>(null);
   const [myName, setMyName] = useState("");
   const [disconnected, setDisconnected] = useState(false);
+  const [gameInvite, setGameInvite] = useState<string | null>(null);
+  const [waitingGame, setWaitingGame] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -46,6 +48,41 @@ export default function NurseChat() {
     }, 3000);
     return () => clearInterval(poll);
   }, [connectionId]);
+
+  useEffect(() => {
+    if (!connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/nurse-connections/${connectionId}`, { credentials: "include" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.gameState === "tictactoe_invited" && !waitingGame) { setGameInvite("tictactoe"); }
+        if (d.gameState === "tictactoe_accepted") { setWaitingGame(false); setGameInvite(null); setLocation(`/tictactoe?connectionId=${connectionId}&name=${encodeURIComponent(partnerName)}`); }
+        if (d.gameState === "tictactoe_declined") { setWaitingGame(false); setGameInvite(null); }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [connectionId]);
+
+  const sendGameInvite = async () => {
+    await fetch(`/api/nurse-connections/${connectionId}`, {
+      method: "PATCH", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameState: "tictactoe_invited" })
+    });
+    setWaitingGame(true);
+  };
+
+  const respondGameInvite = async (accept: boolean) => {
+    const state = accept ? "tictactoe_accepted" : "tictactoe_declined";
+    await fetch(`/api/nurse-connections/${connectionId}`, {
+      method: "PATCH", credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ gameState: state })
+    });
+    setGameInvite(null);
+    if (accept) setLocation(`/tictactoe?connectionId=${connectionId}&name=${encodeURIComponent(partnerName)}`);
+  };
 
   const sendMessage = async () => {
     if (!input.trim() || !connectionId) return;
@@ -91,7 +128,28 @@ export default function NurseChat() {
         <div ref={bottomRef} />
       </div>
       <div className="bg-white dark:bg-gray-900 px-4 py-2 flex justify-center border-t border-border/50">
-        <button onClick={() => setLocation(`/game-select?opponent=${encodeURIComponent(partnerName)}`)} className="flex items-center gap-1.5 bg-violet-100 text-violet-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-violet-200">
+        {waitingGame && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+              <p className="text-lg font-bold text-violet-600 mb-2">Menunggu...</p>
+              <p className="text-sm text-gray-500 mb-4">Menunggu persetujuan {partnerName}</p>
+              <button onClick={() => { setWaitingGame(false); }} className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">Batal</button>
+            </div>
+          </div>
+        )}
+        {gameInvite && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+            <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+              <p className="text-lg font-bold text-violet-600 mb-2">Undangan Main</p>
+              <p className="text-sm text-gray-500 mb-4">{partnerName} mengajak main Tic Tac Toe!</p>
+              <div className="flex gap-3 justify-center">
+                <button onClick={() => respondGameInvite(true)} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">Ya</button>
+                <button onClick={() => respondGameInvite(false)} className="bg-gray-100 text-gray-600 px-6 py-2 rounded-xl font-bold text-sm">Tidak</button>
+              </div>
+            </div>
+          </div>
+        )}
+        <button onClick={() => setLocation(`/game-select?connectionId=${connectionId}&opponent=${encodeURIComponent(partnerName)}`)} className="flex items-center gap-1.5 bg-violet-100 text-violet-600 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-violet-200">
           <Gamepad2 className="w-3.5 h-3.5" /> Main Bareng
         </button>
       </div>

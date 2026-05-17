@@ -24,6 +24,17 @@ export default function Game() {
   const [winner, setWinner] = useState<string|null>(null);
   const [myMark, setMyMark] = useState<"X"|"O">("X");
   const [myUserId, setMyUserId] = useState<number|null>(null);
+  const [gameEnded, setGameEnded] = useState(false);
+
+  useEffect(() => {
+    if (connectionId) {
+      fetch(`/api/nurse-connections/${connectionId}`, {
+        method: "PATCH", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameState: "playing" })
+      });
+    }
+  }, [connectionId]);
 
   useEffect(() => {
     fetch("/api/auth/me", { credentials: "include" })
@@ -57,6 +68,19 @@ export default function Game() {
     return () => clearInterval(interval);
   }, [fetchState]);
 
+  useEffect(() => {
+    if (!connectionId) return;
+    const poll = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/nurse-connections/${connectionId}`, { credentials: "include" });
+        if (!r.ok) return;
+        const d = await r.json();
+        if (d.gameState === "game_exited") { clearInterval(poll); setGameEnded(true); }
+      } catch {}
+    }, 2000);
+    return () => clearInterval(poll);
+  }, [connectionId]);
+
   const handleClick = async (i: number) => {
     if (!connectionId || board[i] || winner) return;
     const isMyTurn = (isXTurn && myMark === "X") || (!isXTurn && myMark === "O");
@@ -89,6 +113,17 @@ export default function Game() {
     }
   };
 
+  const exitGame = async () => {
+    if (connectionId) {
+      await fetch(`/api/nurse-connections/${connectionId}`, {
+        method: "PATCH", credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameState: "game_exited" })
+      });
+    }
+    setGameEnded(true);
+  };
+
   const isMyTurn = (isXTurn && myMark === "X") || (!isXTurn && myMark === "O");
   const status = winner
     ? winner === "draw" ? "Seri! 🤝" : winner === myMark ? "Kamu menang! 🏆" : `${opponentFirst} menang! 🏆`
@@ -96,14 +131,24 @@ export default function Game() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50 dark:bg-gray-950">
+      {gameEnded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-2xl p-6 mx-4 shadow-xl text-center">
+            <p className="text-lg font-bold text-red-500 mb-2">Game Dihentikan</p>
+            <p className="text-sm text-gray-500 mb-4">Salah satu pemain keluar dari permainan.</p>
+            <button onClick={() => setLocation(`/game-select?connectionId=${connectionId}&opponent=${encodeURIComponent(opponent)}`)} className="bg-violet-500 text-white px-6 py-2 rounded-xl font-bold text-sm">Kembali ke Pilihan Game</button>
+          </div>
+        </div>
+      )}
       <header className="bg-white dark:bg-gray-900 px-4 py-3 flex items-center gap-3 border-b border-border/50 shadow-sm">
-        <button onClick={() => setLocation(`/nurse-chat?connectionId=${connectionId}&name=${encodeURIComponent(opponent)}`)} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
+        <button onClick={async () => { if (connectionId) await fetch(`/api/nurse-connections/${connectionId}`, { method: "PATCH", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ gameState: "playing" }) }); setLocation(`/nurse-chat?connectionId=${connectionId}&name=${encodeURIComponent(opponent)}`); }} className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100">
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div>
+        <div className="flex-1">
           <p className="font-bold text-sm">Tic-Tac-Toe</p>
           <p className="text-xs text-muted-foreground">vs {opponentFirst} • Kamu: {myMark}</p>
         </div>
+        <button onClick={exitGame} className="text-xs text-red-500 font-bold px-3 py-1 rounded-full border border-red-200 hover:bg-red-50">Keluar</button>
       </header>
       <div className="flex-1 flex flex-col items-center justify-center gap-6 px-4">
         <div className="bg-white dark:bg-gray-900 rounded-2xl px-6 py-3 shadow-sm">

@@ -7,6 +7,7 @@ export default function NurseConnectedPage() {
   const search = useSearch();
   const params = new URLSearchParams(search);
   const name = params.get("name") ?? "Tenaga Medis";
+  const connectionId = params.get("connectionId");
   const spec = params.get("spec") ?? "Perawat Umum";
   const rating = parseFloat(params.get("rating") ?? "4.8");
   const distance = parseFloat(params.get("dist") ?? "1.2");
@@ -77,7 +78,7 @@ export default function NurseConnectedPage() {
             <Button
               className="w-full h-11 bg-gradient-to-r from-violet-600 to-fuchsia-600 hover:from-violet-700 hover:to-fuchsia-700 text-white font-bold rounded-xl shadow-md text-sm"
               onClick={() =>
-                setLocation(`/game-select?opponent=${encodeURIComponent(name)}&spec=${encodeURIComponent(spec)}`)
+                setLocation(`/game-select?opponent=${encodeURIComponent(name)}&spec=${encodeURIComponent(spec)}&connectionId=${connectionId ?? ""}`)
               }
             >
               <Gamepad2 className="w-4 h-4 mr-2" /> Main Game Bareng 🎮
